@@ -3,137 +3,275 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
-
+import { useGoogleLogin } from '@react-oauth/google'
+import axios from 'axios'
 
 export default function Login() {
   const navigate = useNavigate()
-  const login = useAuthStore((s) => s.login)
+  const { login, loginWithGoogle, setGoogleInfo } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || !password) return toast.error('Please fill email and password')
-    try {
-      setLoading(true)
-      const result = await login(email.trim(), password)
-      if (result?.success) {
-        toast.success(result.message || 'Welcome back!')
-        navigate('/')
-      } else {
-        toast.error(result?.message || 'Login failed')
-      }
-    } catch (err: any) {
-      toast.error(err?.message || 'Login error')
-    } finally {
-      setLoading(false)
+  e.preventDefault();
+  if (!email || !password) return toast.error('Please fill email and password');
+  try {
+    setLoading(true);
+    const result = await login(email.trim(), password);
+    if (result?.success) {
+      toast.success(result.message || 'Welcome back!');
+      navigate('/');
+    } else {
+      toast.error(result?.message || 'Login failed');
     }
+  } catch (err: any) {
+    toast.error(err?.message || 'Login error');
+  } finally {
+    setLoading(false);
   }
+}
 
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true)
+        
+        // Lấy thông tin user từ Google
+        const userInfoResponse = await axios.get(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+          }
+        )
+        
+        const googleUserInfo = userInfoResponse.data
+        
+        // Lưu Google info vào store
+        setGoogleInfo({
+          name: googleUserInfo.name,
+          email: googleUserInfo.email,
+          picture: googleUserInfo.picture
+        })
+        
+        // Login với backend bằng id_token (cần lấy id_token từ tokenResponse)
+        // Note: Để lấy id_token, cần config flow: 'auth-code' trong useGoogleLogin
+        // Ở đây tạm thời dùng access_token
+        await loginWithGoogle(tokenResponse.access_token, googleUserInfo)
+        
+        toast.success('Google login successful!')
+        navigate('/')
+      } catch (error: any) {
+        toast.error(error?.message || 'Google login failed')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => {
+      toast.error('Google login was cancelled or failed')
+    }
+  })
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white py-12 px-4">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50 py-12 px-4">
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        className="w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-white"
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-white"
       >
         {/* Left decorative panel */}
-        <div className="hidden md:flex flex-col justify-center items-start gap-6 p-8 bg-gradient-to-br from-indigo-600 to-pink-500 text-white">
-          <h2 className="text-3xl font-extrabold">Welcome back</h2>
-          <p className="opacity-90 max-w-xs text-sm">
-            Sign in to continue writing, saving drafts and sharing your ideas with the world.
-          </p>
+        <div className="hidden md:flex flex-col justify-center items-start gap-6 p-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="relative z-10">
+            <motion.h2 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-4xl font-extrabold mb-4"
+            >
+              Welcome back
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="opacity-90 max-w-sm text-base leading-relaxed"
+            >
+              Sign in to continue writing, saving drafts and sharing your ideas with the world.
+            </motion.p>
 
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-8 space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-sm">Create unlimited posts</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-sm">Build your audience</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                </div>
+                <p className="text-sm">Track your analytics</p>
+              </div>
+            </motion.div>
 
-          <div className="mt-4 w-full">
-            <div className="rounded-lg bg-white/10 p-3 text-xs">No account? <Link to="/auth/register" className="font-semibold underline">Create one</Link></div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8 rounded-xl bg-white/10 backdrop-blur-sm p-4 text-sm border border-white/20"
+            >
+              No account? <Link to="/auth/signup" className="font-semibold underline hover:text-white/90 transition-colors">Create one</Link>
+            </motion.div>
           </div>
         </div>
 
-
         {/* Right: form */}
-        <div className="p-8">
-          <h3 className="text-xl font-bold text-gray-900">Sign in</h3>
-          <p className="mt-1 text-sm text-gray-500">Enter your credentials to access your dashboard</p>
+        <div className="p-8 md:p-12">
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-900">Sign in</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Enter your credentials to access your dashboard
+            </p>
+          </div>
 
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4" aria-label="Login form">
-            <label className="block">
-              <span className="text-xs text-gray-600">Email</span>
+          <form onSubmit={handleSubmit} className="space-y-5" aria-label="Login form">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email address
+              </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="you@domain.com"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                placeholder="you@example.com"
                 required
-              />
-            </label>
-
-
-            <label className="block">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">Password</span>
-                <Link to="/auth/forgot" className="text-xs text-indigo-600 hover:underline">Forgot?</Link>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="••••••••"
-                required
-              />
-            </label>
-
-
-            <div className="flex items-center justify-between gap-3">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                <span className="text-sm text-gray-600">Remember me</span>
-              </label>
-
-
-              <button
-                type="submit"
                 disabled={loading}
-                className="ml-auto inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
+              />
             </div>
 
-
-            <div className="pt-2">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-white px-2 text-gray-400">Or continue with</span>
-                </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <Link 
+                  to="/auth/forgot" 
+                  className="text-xs text-indigo-600 hover:text-indigo-500 font-medium transition-colors"
+                >
+                  Forgot password?
+                </Link>
               </div>
-
-
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                  required
+                  disabled={loading}
+                />
                 <button
                   type="button"
-                  onClick={() => toast('Social auth not set up in this demo')}
-                  className="rounded-md border border-gray-200 px-3 py-2 text-sm bg-white hover:bg-gray-50"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  Google
+                  {showPassword ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
                 </button>
-                <button type="button" className="rounded-md border border-gray-200 px-3 py-2 text-sm bg-white hover:bg-gray-50">GitHub</button>
               </div>
             </div>
 
+            <div className="flex items-center">
+              <input
+                id="remember"
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+                Remember me for 30 days
+              </label>
+            </div>
 
-            <p className="mt-4 text-xs text-gray-500">
-              Don’t have an account? <Link to="/auth/register" className="text-indigo-600 font-medium">Create one</Link>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleGoogleLogin()}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Continue with Google
+            </button>
+
+            <p className="mt-6 text-center text-xs text-gray-500">
+              Don't have an account?{' '}
+              <Link to="/auth/signup" className="text-indigo-600 font-semibold hover:text-indigo-500 transition-colors">
+                Create one now
+              </Link>
             </p>
           </form>
         </div>

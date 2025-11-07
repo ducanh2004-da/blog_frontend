@@ -1,47 +1,25 @@
 import React from 'react'
 import { AnimatePresence } from 'framer-motion'
 import Friend from './../features/home/components/Friend';
-import Post from './../features/home/components/Post';
 import SpeacialBlog from '@/features/home/components/SpeacialBlog';
-
-type Post = {
-  id: string
-  title: string
-  excerpt: string
-  author: string
-  date: string
-  readTime: string
-}
-
-const samplePosts: Post[] = [
-  {
-    id: '1',
-    title: "My First Blog Post",
-    excerpt:
-      "A friendly introduction to my blog: stories, learnings and little experiments I do every week.",
-    author: 'Viet Anh',
-    date: 'Nov 1, 2025',
-    readTime: '4 min'
-  },
-  {
-    id: '2',
-    title: 'Understanding React Hooks',
-    excerpt: 'Clear, practical guide to useEffect, useMemo and custom hooks for real apps.',
-    author: 'Duc Anh',
-    date: 'Oct 28, 2025',
-    readTime: '7 min'
-  },
-  {
-    id: '3',
-    title: 'A Guide to Modern CSS',
-    excerpt: 'From utility-first to container queries — modern patterns that actually scale.',
-    author: 'Nhat An',
-    date: 'Oct 20, 2025',
-    readTime: '6 min'
-  }
-]
+import BlogForm from '@/features/home/components/BlogForm';
+import { blogService } from '@/features/home/service/blog.service';
+import { useQuery } from '@tanstack/react-query';
+import Post from '@/features/home/components/Post';
+import { Blog } from '@/features/home/types/blog.type';
 
 export default function Home() {
+
+  const {
+    data: posts,
+    isLoading,
+    isError,
+  } = useQuery<Blog[]>({
+    queryKey: ['posts'],
+    queryFn: () => blogService.getPosts(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8 px-10 sm:px-6 lg:px-12">
       <div className="mx-auto">
@@ -53,9 +31,7 @@ export default function Home() {
             </h1>
             <p className="mt-1 text-sm text-gray-500">Thoughts on web, code, design & life.</p>
           </div>
-          <button className="md:inline-flex items-center gap-2 rounded-lg border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200">
-            New Post
-          </button>
+              <BlogForm editId = {null} />
         </header>
 
         {/* Layout */}
@@ -66,7 +42,7 @@ export default function Home() {
           {/* Main: Posts */}
           <section className="lg:col-span-6 order-1 lg:order-2">
             <AnimatePresence>
-              <Post />
+              <Post posts = {posts} isLoading = {isLoading} isError = {isError} />
             </AnimatePresence>
 
             {/* Pagination / load more */}

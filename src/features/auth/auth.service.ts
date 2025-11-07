@@ -1,3 +1,4 @@
+// src/features/auth/auth.service.ts
 import apiConfig from './../../configs/api.config';
 
 export const authService = {
@@ -13,14 +14,9 @@ export const authService = {
           }
         }
       `,
-      variables: {
-        data: {
-          email,
-          password
-        }
-      }
-    })
-    return response.data.data.login
+      variables: { data: { email, password } }
+    });
+    return response.data.data.login;
   },
 
   register: async (address: string, email: string, password: string, phoneNumber: string, username: string) => {
@@ -33,17 +29,9 @@ export const authService = {
           }
         }
       `,
-      variables: {
-        data: {
-          address,
-          email,
-          password,
-          phoneNumber,
-          username
-        }
-      }
-    })
-    return response.data.data.register
+      variables: { data: { address, email, password, phoneNumber, username } }
+    });
+    return response.data.data.register;
   },
 
   loginWithGoogle: async (idToken: string) => {
@@ -58,11 +46,9 @@ export const authService = {
           }
         }
       `,
-      variables: {
-        idToken
-      }
-    })
-    return response.data.data.googleLogin
+      variables: { idToken }
+    });
+    return response.data.data.googleLogin;
   },
 
   logout: async () => {
@@ -76,30 +62,35 @@ export const authService = {
         }
       `,
       variables: {}
-    })
-    return response.data.data.logout
+    });
+    return response.data.data.logout;
   },
 
-  // Query để lấy thông tin user hiện tại
+  // Preferred: server exposes currentUser that reads cookie and returns the user
   getCurrentUser: async () => {
     const response = await apiConfig.post('', {
       query: `
-        query GetCurrentUser {
-          getCurrentUser {
-            id
-            email
-            username
-            role
-            address
-            phoneNumber
+        query CurrentUser {
+          currentUser {
+            data {
+              id
+              username
+              email
+              role
+              avatar
+              phoneNumber
+              createdAt
+              updatedAt
+            }
+            message
           }
         }
       `
-    })
-    return response.data.data.getCurrentUser
+    });
+    // adjust according to your GraphQL return shape
+    return response.data.data.currentUser?.data ?? null;
   },
 
-  // Refresh token mutation (được gọi tự động trong interceptor)
   refreshTokens: async () => {
     const response = await apiConfig.post('', {
       query: `
@@ -110,7 +101,7 @@ export const authService = {
           }
         }
       `
-    })
-    return response.data.data.refresh
+    });
+    return response.data.data.refresh;
   }
 }
