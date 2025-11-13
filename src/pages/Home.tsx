@@ -7,8 +7,12 @@ import { blogService } from '@/features/home/service/blog.service';
 import { useQuery } from '@tanstack/react-query';
 import Post from '@/features/home/components/Post';
 import { Blog } from '@/features/home/types/blog.type';
+import { useOutletContext } from 'react-router-dom';
+
+type OutletContextType = { search: string };
 
 export default function Home() {
+  const {search} = useOutletContext<OutletContextType>()
 
   const {
     data: posts,
@@ -42,7 +46,7 @@ export default function Home() {
           {/* Main: Posts */}
           <section className="lg:col-span-6 order-1 lg:order-2">
             <AnimatePresence>
-              <Post posts = {posts} isLoading = {isLoading} isError = {isError} />
+              <Post posts = {posts} isLoading = {isLoading} isError = {isError} search={search} />
             </AnimatePresence>
 
             {/* Pagination / load more */}

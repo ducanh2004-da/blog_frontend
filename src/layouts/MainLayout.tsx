@@ -1,18 +1,37 @@
 // src/layouts/MainLayout.tsx
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
+import { useState, useCallback, useRef } from 'react'
 
 export default function MainLayout() {
   const user = useAuthStore(s => s.userDetails)
   const logout = useAuthStore(s => s.logout)
   const navigate = useNavigate()
 
+  const [input, setInput] = useState('');
+  const [search, setSearch] = useState(''); 
+  const debounceRef = useRef<number | null>(null);
+
+  const handleInputChange = (e: any) => {
+    const v = e.target.value;
+    setInput(v);
+
+    // debounce 300ms
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = window.setTimeout(() => {
+      setSearch(v.trim());
+      debounceRef.current = null;
+    }, 300);
+  };
+
   return (
     <div className="w-full">
       <header className='flex h-15 justify-between px-6 items-center border-b border-gray-200 bg-white shadow-sm'>
         <div className="search-box max-w-3xl flex">
-          <input type="text" placeholder="Search..." className="w-150 p-2 border border-gray-300 rounded-l-md focus:outline-none" />
-          <button className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600">Search</button>
+          <input type="text" placeholder="Search..." value={input} onChange={handleInputChange} className="w-150 p-2 border border-gray-300 rounded-l-md focus:outline-none" />
+          <button onClick={() => setSearch(input.trim())} className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600">Search</button>
         </div>
 
         <div className="left-side-header flex items-center gap-4">
@@ -24,7 +43,7 @@ export default function MainLayout() {
             {user ? (
               <>
                 <div className="flex items-center gap-2">
-                  <img src={user.avatar ?? '/default-avatar.png'} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
+                  <img src={user.avatar ?? '../features/img/sampleAvatar.png'} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
                   <div className="flex flex-col text-sm">
                     <span className="font-medium text-gray-700">{user.username ?? user.email}</span>
                     <span className="text-xs text-gray-400">{user.role}</span>
@@ -48,7 +67,7 @@ export default function MainLayout() {
       </header>
 
       <section className="w-full max-w-full min-h-screen relative overflow-hidden py-5">
-        <Outlet />
+        <Outlet context={{ search }} />
       </section>
 
       <footer>

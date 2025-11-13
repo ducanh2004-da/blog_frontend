@@ -14,6 +14,13 @@ export const blogService = {
         content
         createdAt
         id
+        user {
+          avatar
+          email
+          id
+          role
+          username
+        }
       }
       content
       createdAt
@@ -48,6 +55,7 @@ export const blogService = {
     success
     blogs {
       comments {
+        id
         content
         user {
           avatar

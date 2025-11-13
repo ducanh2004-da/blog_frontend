@@ -1,8 +1,10 @@
+import { User } from "./user.type";
 export type Blog = {
   comments: {
     content: string;
     createdAt: string;
     id: string;
+    user: User;
   }[];
   content: string;
   createdAt: string;
@@ -27,6 +29,7 @@ export interface PostProps {
   posts: Blog[] | undefined
   isLoading: any
   isError: any
+  search: string
 }
 
 export interface BlogFormProps {
