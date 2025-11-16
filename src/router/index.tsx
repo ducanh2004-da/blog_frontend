@@ -8,6 +8,7 @@ import { MainLayout, AuthLayout, ErrorBoundary } from '../layouts';
 const Pages = {
   Main: {
     Home: lazy(() => import('../pages/Home')),
+    ViewDetail: lazy(() => import('../pages/ViewBlog'))
   },
   Auth: {
     Login: lazy(() => import('../pages/Login')),
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
             <Pages.Main.Home />
         )
       },
+       { path: "viewDetail/:blogId", element: <Pages.Main.ViewDetail /> },
     ],
     errorElement: <ErrorBoundary />,
   },

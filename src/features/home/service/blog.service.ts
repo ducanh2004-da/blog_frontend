@@ -1,5 +1,6 @@
 import apiConfig from "@/configs/api.config";
 import { create } from "zustand";
+import { toast } from "sonner";
 
 export const blogService = {
   getPosts: async () => {
@@ -46,7 +47,11 @@ export const blogService = {
     return response.data.data.getAllBlogs.blogs;
   },
 
-  getPostById: async (id: string) => {
+  getPostById: async (id: string | undefined) => {
+    if(!id){
+      toast.error('get post fail');
+      throw new Error('get post fail');
+    }
     const response = await apiConfig.post('', {
         query: `
         query Query($getBlogByIdId: String!) {
@@ -194,6 +199,64 @@ updatePost: async (id: string, title: string, content: string, tagId: string | n
         variables: { deleteBlogId: id }
     });
     return response.data.data.deleteBlog;
+  },
+
+  getTop5Like: async () => {
+    const response = await apiConfig.post('', {
+        query: `
+        query GetTop5Like {
+  getTop5Like {
+    success
+    message
+    blogs {
+      id
+      title
+      content
+      createdAt
+      tags {
+        name
+        id
+      }
+      user {
+        avatar
+        username
+        email
+        role
+      }
+    }
   }
+}
+  `,});
+    return response.data.data.getTop5Like.blogs;
+  },
+
+  getTop5Recent: async () => {
+    const response = await apiConfig.post('', {
+        query: `
+        query Query {
+  getTop5Recent {
+    success
+    message
+    blogs {
+      id
+      title
+      content
+      createdAt
+      tags {
+        name
+        id
+      }
+      user {
+        avatar
+        username
+        email
+        role
+      }
+    }
+  }
+}
+  `,});
+    return response.data.data.getTop5Recent.blogs;
+  },
 
 };

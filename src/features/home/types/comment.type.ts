@@ -12,7 +12,7 @@ export type CommentResponse = {
 }
 
 export interface CommentProps {
-  blogId: string;
+  blogId?: string;
 }
 
 export interface CreateComment {

@@ -1,8 +1,13 @@
 // comment.service.ts
 import apiConfig from "@/configs/api.config";
+import { toast } from "sonner";
 
 export const commentService = {
-  getCommentByBlog: async (blogId: string) => {
+  getCommentByBlog: async (blogId: string | undefined) => {
+    if(!blogId){
+      toast.error('Get comment fail');
+      throw new Error('Get comment fail');
+    }
     const response = await apiConfig.post('', {
       query: `
         query Query($blogId: String!) {
@@ -30,7 +35,7 @@ export const commentService = {
     return response.data.data.getCommentByBlog;
   },
 
-  createPost: async (content: string, blogId: string | null) => {
+  createPost: async (content: string, blogId: string | null | undefined) => {
     const response = await apiConfig.post('', {
       query: `
         mutation Mutation($data: CreateComment!) {

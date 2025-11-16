@@ -10,9 +10,13 @@ export type Like = {
 export type LikeResponse = {
     success: boolean;
     message: string;
+    count: number;
     likes: Like[];
 }
 
 export type LikeProps = {
-    blogId: string;
+    blogId?: string;
+    onClose?: () => void;
+    open?: boolean;
+    currentUserId?: string;
 }

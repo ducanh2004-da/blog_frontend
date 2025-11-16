@@ -100,9 +100,11 @@ export default function Register() {
       await register(
         formData.address,
         formData.email.trim(),
-        formData.username.trim(),
+        formData.password,
         formData.phoneNumber.trim(),
-        formData.password
+        formData.username.trim(),
+        
+        
       )
       
       toast.success('Registration successful! Please sign in.')

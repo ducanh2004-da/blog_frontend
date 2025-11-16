@@ -19,14 +19,14 @@ export default function Home() {
     isLoading,
     isError,
   } = useQuery<Blog[]>({
-    queryKey: ['posts'],
+    queryKey: ['blogs'],
     queryFn: () => blogService.getPosts(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8 px-10 sm:px-6 lg:px-12">
-      <div className="mx-auto">
+    <main className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8 px-6 sm:px-6 lg:px-12">
+      <div className="mx-auto max-w-[1300px]">
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -35,11 +35,12 @@ export default function Home() {
             </h1>
             <p className="mt-1 text-sm text-gray-500">Thoughts on web, code, design & life.</p>
           </div>
-              <BlogForm editId = {null} />
+          <BlogForm editId = {null} />
         </header>
 
         {/* Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-15 max-w-full">
+        {/* important: items-start so sticky children align to top */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left: Friends */}
           <Friend />
 

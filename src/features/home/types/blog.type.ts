@@ -39,3 +39,7 @@ export interface BlogFormProps {
   rows?: any[];
   onblogChange?: (blog: any, id?: string | number | null) => void;
 }
+
+export interface BlogIdProps{
+  blogId?: string;
+}

@@ -2,7 +2,7 @@
 import apiConfig from "@/configs/api.config";
 
 export const likeService = {
-  getLikeByBlog: async (blogId: string) => {
+  getLikeByBlog: async (blogId?: string) => {
     const response = await apiConfig.post('', {
       query: `
         query Query($blogId: String!) {
