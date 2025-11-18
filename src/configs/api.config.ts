@@ -3,11 +3,11 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../stores/auth.store'
 
 const apiConfig = axios.create({
-  baseURL: import.meta.env.VITE_API_BACKEND_URL,
+  baseURL: import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:3000/graphql',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
   timeout: 30000,
 })
 

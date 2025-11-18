@@ -222,17 +222,17 @@ export default function BlogForm({
     <React.Fragment>
       {/* Optional: Add button to open dialog locally */}
       <Button className="md:inline-flex items-center gap-2 rounded-lg border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200" variant="outlined" onClick={() => setDialogOpen(true)}>
-        {editId ? 'Edit'  : 'Add new blog +'}
+        {editId ? 'Sửa'  : 'Thêm bài mới +'}
 
       </Button>
 
       <Toaster position="top-right" />
 
       <Dialog open={dialogOpen} onClose={handleLocalClose} fullWidth maxWidth="sm">
-        <DialogTitle>{editId ? 'Edit Blog' : 'Add Blog'}</DialogTitle>
+        <DialogTitle>{editId ? 'Sửa bài viết' : 'Thêm bài viết'}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {editId ? 'Edit your blog details' : "Let's create a new blog"}
+            {editId ? 'Chỉnh sửa bài viết của bạn' : "Thêm bài viết mới nào"}
           </DialogContentText>
 
           <Box component="form" id="blog-form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
@@ -276,7 +276,7 @@ export default function BlogForm({
               >
                 {tagsLoading && <MenuItem value=""><em>Loading tags...</em></MenuItem>}
                 {!tagsLoading && (!tagOptions || (Array.isArray(tagOptions) && tagOptions.length === 0)) && (
-                  <MenuItem value=""><em>No tags</em></MenuItem>
+                  <MenuItem value=""><em>Chưa có tags</em></MenuItem>
                 )}
                 {Array.isArray(tagOptions) && tagOptions.map((t) => (
                   <MenuItem key={t.id ?? t._id ?? t.name} value={t.id ?? t._id ?? t.name}>
@@ -289,9 +289,9 @@ export default function BlogForm({
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleLocalClose}>Cancel</Button>
+          <Button onClick={handleLocalClose}>Hủy</Button>
           <Button type="submit" form="blog-form" disabled={currentLoading}>
-            {currentLoading ? (editId ? 'Saving...' : 'Submitting...') : (editId ? 'Save' : 'Submit')}
+            {currentLoading ? (editId ? 'Đang lưu...' : 'Đang gửi...') : (editId ? 'Lưu' : 'Gửi')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -317,7 +317,7 @@ export default function BlogForm({
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleInfoClose}>Close</Button>
+            <Button onClick={handleInfoClose}>Đóng</Button>
           </DialogActions>
         </Dialog>
       )}

@@ -54,7 +54,7 @@ const PostItem = React.memo(function PostItem({
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 id={`post-${post?.id}-title`} className="text-xl font-semibold text-gray-900">
-                {post?.title ? highlightText(post?.title, search) : "(No title)"}
+                {post?.title ? highlightText(post?.title, search) : "(Không tiêu đề)"}
               </h3>
               <div
                 className="mt-1 w-9/12 text-sm text-gray-500"
@@ -72,18 +72,18 @@ const PostItem = React.memo(function PostItem({
             <div className="hidden md:flex md:flex-col md:items-end md:justify-between">
               <div className="text-xs text-gray-400">{post?.createdAt ? new Date(post?.createdAt).toLocaleString() : ""}</div>
               <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                <span>By {post?.user?.username ?? "Unknown"}</span>
+                <span>Bởi {post?.user?.username ?? "Unknown"}</span>
               </div>
             </div>
           </div>
 
           <div className="mt-4 flex items-center gap-3">
             <Button variant="contained" size="small" onClick={() => navigate(`/viewDetail/${post?.id}`)}>
-              View detail
+              Đọc bài viết
             </Button>
 
             <button type="button" className="rounded-md bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-100">
-              Save
+              Lưu
             </button>
 
             <BlogForm editId={post.id} />

@@ -137,7 +137,7 @@ export default function Register() {
               transition={{ delay: 0.2 }}
               className="text-4xl font-extrabold mb-4"
             >
-              Join our community
+              Gia nhập team nào bé ;))
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0, x: -20 }}
@@ -145,7 +145,7 @@ export default function Register() {
               transition={{ delay: 0.3 }}
               className="opacity-90 max-w-sm text-base leading-relaxed"
             >
-              Start your journey with us today. Create, share, and connect with thousands of writers worldwide.
+              Bắt đầu viết vời và tìm cộng đồng nào
             </motion.p>
 
             <motion.div 
@@ -154,30 +154,7 @@ export default function Register() {
               transition={{ delay: 0.4 }}
               className="mt-8 space-y-4"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <p className="text-sm">Free account with unlimited posts</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <p className="text-sm">Join a global community of writers</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <p className="text-sm">Advanced analytics and insights</p>
-              </div>
+              
             </motion.div>
 
             <motion.div 
@@ -186,7 +163,7 @@ export default function Register() {
               transition={{ delay: 0.5 }}
               className="mt-8 rounded-xl bg-white/10 backdrop-blur-sm p-4 text-sm border border-white/20"
             >
-              Already have an account? <Link to="/auth/login" className="font-semibold underline hover:text-white/90 transition-colors">Sign in</Link>
+              Cưng đã có tài khoản à? <Link to="/auth/login" className="font-semibold underline hover:text-white/90 transition-colors"> Đăng nhập</Link>
             </motion.div>
           </div>
         </div>
@@ -194,16 +171,16 @@ export default function Register() {
         {/* Right: form */}
         <div className="p-8 md:p-12 overflow-y-auto max-h-screen">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900">Create account</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Tạo tài khoản mới</h3>
             <p className="mt-2 text-sm text-gray-600">
-              Fill in your details to get started
+              Điển thông tin
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" aria-label="Register form">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username <span className="text-red-500">*</span>
+                Họ và Tên <span className="text-red-500">*</span>
               </label>
               <input
                 id="username"
@@ -221,7 +198,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email address <span className="text-red-500">*</span>
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 id="email"
@@ -239,7 +216,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone number
+                Số điện thoại
               </label>
               <input
                 id="phoneNumber"
@@ -256,7 +233,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+                Địa chỉ
               </label>
               <textarea
                 id="address"
@@ -272,7 +249,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password <span className="text-red-500">*</span>
+                Mật khẩu <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -308,7 +285,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm password <span className="text-red-500">*</span>
+                Nhập lại mật khẩu <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -350,13 +327,13 @@ export default function Register() {
                 className="h-4 w-4 mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <label htmlFor="terms" className="ml-2 text-xs text-gray-600">
-                I agree to the{' '}
+                Tôi đồng ý với{' '}
                 <Link to="/terms" className="text-indigo-600 hover:text-indigo-500 font-medium">
-                  Terms of Service
+                  Yêu cầu
                 </Link>
-                {' '}and{' '}
+                {' '}và{' '}
                 <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500 font-medium">
-                  Privacy Policy
+                  Điều khoản
                 </Link>
               </label>
             </div>
@@ -372,17 +349,17 @@ export default function Register() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Creating account...
+                  Đang tạo...
                 </span>
               ) : (
-                'Create account'
+                'Tạo tài khoản'
               )}
             </button>
 
             <p className="mt-4 text-center text-xs text-gray-500">
-              Already have an account?{' '}
+              Đã có tài khoản?{' '}
               <Link to="/auth/login" className="text-indigo-600 font-semibold hover:text-indigo-500 transition-colors">
-                Sign in
+                Đăng nhập
               </Link>
             </p>
           </form>

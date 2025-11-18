@@ -33,16 +33,16 @@ export default function MainLayout() {
         <div className="search-box max-w-3xl flex">
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Tìm kiếm..."
             value={input}
             onChange={handleInputChange}
             className="w-150 p-2 border border-gray-300 rounded-l-md focus:outline-none"
           />
           <button
             onClick={() => setSearch(input.trim())}
-            className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
+            className="p-2 cursor-pointer bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
           >
-            Search
+            Tìm
           </button>
         </div>
 
@@ -78,17 +78,17 @@ export default function MainLayout() {
                     await logout();
                     navigate("/auth/login");
                   }}
-                  className="px-3 py-1 text-sm rounded bg-red-50 text-red-600 border border-red-100"
+                  className="cursor-pointer px-3 py-1 text-sm rounded bg-red-50 text-red-600 border border-red-100"
                 >
-                  Logout
+                  Đăng xuất
                 </button>
               </>
             ) : (
               <button
                 onClick={() => navigate("/auth/login")}
-                className="px-3 py-1 rounded bg-indigo-600 text-white text-sm"
+                className="cursor-pointer px-3 py-1 rounded bg-indigo-600 text-white text-sm"
               >
-                Sign in
+                Đăng nhập
               </button>
             )}
           </div>

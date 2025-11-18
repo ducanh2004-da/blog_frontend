@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import { AnimatePresence } from 'framer-motion'
 import Friend from './../features/home/components/Friend';
 import SpeacialBlog from '@/features/home/components/SpeacialBlog';
@@ -8,11 +8,18 @@ import { useQuery } from '@tanstack/react-query';
 import Post from '@/features/home/components/Post';
 import { Blog } from '@/features/home/types/blog.type';
 import { useOutletContext } from 'react-router-dom';
+import ChatWindow from '@/features/home/components/ChatWindow';
+import { Conversation } from '@/features/home/types/chat.types';
+import ConversationList from '@/features/home/components/ConversationList';
+
 
 type OutletContextType = { search: string };
 
 export default function Home() {
   const {search} = useOutletContext<OutletContextType>()
+
+  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const {
     data: posts,
@@ -33,7 +40,7 @@ export default function Home() {
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
               Duc Anh's Blog
             </h1>
-            <p className="mt-1 text-sm text-gray-500">Thoughts on web, code, design & life.</p>
+            <p className="mt-1 text-sm text-gray-500">Lên ý tượng độc đáo cho content bạn nào</p>
           </div>
           <BlogForm editId = {null} />
         </header>
@@ -50,6 +57,9 @@ export default function Home() {
               <Post posts = {posts} isLoading = {isLoading} isError = {isError} search={search} />
             </AnimatePresence>
 
+            {/* Right: ConversationList */}
+          
+
             {/* Pagination / load more */}
             <div className="mt-6 flex justify-center">
               <button className="rounded-full border border-gray-200 bg-white px-6 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">Load more</button>
@@ -60,6 +70,7 @@ export default function Home() {
           <SpeacialBlog />
         </div>
       </div>
+      <ChatWindow />
     </main>
   )
 }

@@ -48,7 +48,11 @@ export default function BlogComments({ blogId }: CommentProps) {
   const { user: authUser } = useAuthStore();
 
   // fetch comments
-  const { data: commentsResp, isLoading, isError } = useQuery<CommentResponse>({
+  const {
+    data: commentsResp,
+    isLoading,
+    isError,
+  } = useQuery<CommentResponse>({
     queryKey: ["comments", blogId],
     queryFn: () => commentService.getCommentByBlog(blogId),
     staleTime: 1000 * 60 * 5,
@@ -57,13 +61,21 @@ export default function BlogComments({ blogId }: CommentProps) {
 
   // mutation with optimistic update
   const createComment = useMutation({
-    mutationFn: ({ content, blogId }: { content: string; blogId: string | null | undefined }) =>
-      commentService.createPost(content, blogId),
+    mutationFn: ({
+      content,
+      blogId,
+    }: {
+      content: string;
+      blogId: string | null | undefined;
+    }) => commentService.createPost(content, blogId),
     onMutate: async ({ content, blogId: bId }) => {
       // cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["comments", bId] });
       // snapshot previous
-      const previous = queryClient.getQueryData<CommentResponse>(["comments", bId]);
+      const previous = queryClient.getQueryData<CommentResponse>([
+        "comments",
+        bId,
+      ]);
 
       // create optimistic comment
       const optimisticComment: Comment = {
@@ -80,9 +92,15 @@ export default function BlogComments({ blogId }: CommentProps) {
       // set optimistic data
       queryClient.setQueryData<CommentResponse>(["comments", bId], (old) => {
         if (!old) {
-          return { success: true, comments: [optimisticComment] } as CommentResponse;
+          return {
+            success: true,
+            comments: [optimisticComment],
+          } as CommentResponse;
         }
-        return { ...old, comments: [optimisticComment, ...old.comments] } as CommentResponse;
+        return {
+          ...old,
+          comments: [optimisticComment, ...old.comments],
+        } as CommentResponse;
       });
 
       // return context to rollback
@@ -91,21 +109,29 @@ export default function BlogComments({ blogId }: CommentProps) {
     onError: (err: any, variables, context: any) => {
       // rollback
       if (context?.previous) {
-        queryClient.setQueryData(["comments", variables.blogId], context.previous);
+        queryClient.setQueryData(
+          ["comments", variables.blogId],
+          context.previous
+        );
       }
       console.error("Error creating comment:", err);
       toast.error(err?.message ?? "Create comment failed");
     },
     onSettled: (_data, _err, variables) => {
       // refetch to sync with server canonical data
-      queryClient.invalidateQueries({ queryKey: ["comments", variables.blogId] });
+      queryClient.invalidateQueries({
+        queryKey: ["comments", variables.blogId],
+      });
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
     },
     onSuccess: (data) => {
       toast.success(data?.message ?? "Comment created");
       // scroll to top of comments (new comment)
       setTimeout(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     },
   });
@@ -128,7 +154,9 @@ export default function BlogComments({ blogId }: CommentProps) {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setValue(e.target.value);
     setCharCount(e.target.value.length);
   };
@@ -138,7 +166,11 @@ export default function BlogComments({ blogId }: CommentProps) {
     return (
       <Paper elevation={0} sx={{ p: 2 }}>
         <Stack spacing={1}>
-          <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 2 }} />
+          <Skeleton
+            variant="rectangular"
+            height={40}
+            sx={{ borderRadius: 2 }}
+          />
           <Stack direction="row" spacing={2} alignItems="center">
             <Skeleton variant="circular" width={48} height={48} />
             <Skeleton variant="text" width="60%" />
@@ -153,7 +185,9 @@ export default function BlogComments({ blogId }: CommentProps) {
   if (isError) {
     return (
       <Paper sx={{ p: 2 }}>
-        <Typography color="error">Đã có lỗi xảy ra khi tải bình luận.</Typography>
+        <Typography color="error">
+          Đã có lỗi xảy ra khi tải bình luận.
+        </Typography>
       </Paper>
     );
   }
@@ -163,9 +197,19 @@ export default function BlogComments({ blogId }: CommentProps) {
   return (
     <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
       <Box ref={scrollRef} sx={{ mb: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-          <Typography variant="h6">Discussion</Typography>
-          <Chip label={`${comments.length} comment${comments.length !== 1 ? "s" : ""}`} size="small" />
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 1 }}
+        >
+          <Typography variant="h6">Thảo luận</Typography>
+          <Chip
+            label={`${comments.length} comment${
+              comments.length !== 1 ? "s" : ""
+            }`}
+            size="small"
+          />
         </Stack>
 
         {/* comment list */}
@@ -173,7 +217,7 @@ export default function BlogComments({ blogId }: CommentProps) {
           <Box sx={{ textAlign: "center", py: 4 }}>
             {/* <img src={sampleAvatar} alt="no comments" style={{ width: 72, height: 72, borderRadius: "50%", opacity: 0.85 }} /> */}
             <Typography variant="body1" sx={{ mt: 2 }}>
-              Be the first to comment
+              Làm người đóng góp đầu tiên nào
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Chia sẻ suy nghĩ của bạn về bài viết này.
@@ -187,21 +231,28 @@ export default function BlogComments({ blogId }: CommentProps) {
                   <ListItemAvatar>
                     <Avatar
                       alt={c.user?.username ?? "user"}
-                      src={c.user?.avatar ?? sampleAvatar}
                       sx={{ width: 48, height: 48 }}
-                    />
+                    >
+                      {c.user?.username?.charAt(0)?.toUpperCase() ?? "U"}
+                    </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={
                       <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="subtitle2">{c.user?.username ?? "Unknown"}</Typography>
+                        <Typography variant="subtitle2">
+                          {c.user?.username ?? "Unknown"}
+                        </Typography>
                         <Typography variant="caption" color="text.secondary">
                           · {timeAgo(c.createdAt)}
                         </Typography>
                       </Stack>
                     }
                     secondary={
-                      <Typography variant="body2" color="text.primary" sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.primary"
+                        sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}
+                      >
                         {c.content}
                       </Typography>
                     }
@@ -216,19 +267,23 @@ export default function BlogComments({ blogId }: CommentProps) {
 
       {/* input */}
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
-
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          alignItems="flex-start"
+        >
           <Avatar
-            src={ sampleAvatar}
-            alt={authUser?.username ?? "You"}
+            alt={"Bạn"}
             sx={{ width: 48, height: 48 }}
-          />
+          >
+            {"Bạn"}
+          </Avatar>
           <Box sx={{ flex: 1 }}>
             <TextField
               inputRef={inputRef}
               value={value}
               onChange={handleChange}
-              placeholder="Write a comment..."
+              placeholder="Viết gì vui vui ik..."
               fullWidth
               minRows={2}
               maxRows={6}
@@ -236,8 +291,16 @@ export default function BlogComments({ blogId }: CommentProps) {
               variant="outlined"
               size="small"
             />
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
-              <Typography variant="caption" color={charCount > 500 ? "error" : "text.secondary"}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mt: 1 }}
+            >
+              <Typography
+                variant="caption"
+                color={charCount > 500 ? "error" : "text.secondary"}
+              >
                 {charCount}/500
               </Typography>
               <Stack direction="row" spacing={1}>
@@ -246,9 +309,13 @@ export default function BlogComments({ blogId }: CommentProps) {
                   variant="contained"
                   size="small"
                   disabled={createComment.isPending}
-                  startIcon={createComment.isPending ? <CircularProgress size={16} /> : undefined}
+                  startIcon={
+                    createComment.isPending ? (
+                      <CircularProgress size={16} />
+                    ) : undefined
+                  }
                 >
-                  {createComment.isPending ? "Sending..." : "Send"}
+                  {createComment.isPending ? "Đang gửi..." : "Gửi"}
                 </Button>
                 <Tooltip title="Discard">
                   <IconButton
@@ -258,7 +325,7 @@ export default function BlogComments({ blogId }: CommentProps) {
                     }}
                     size="small"
                   >
-                    ✕
+                    Xóa
                   </IconButton>
                 </Tooltip>
               </Stack>

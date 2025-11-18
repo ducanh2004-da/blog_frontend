@@ -145,7 +145,7 @@ export default function SpecialBlog({
                   }`}
                 >
                   <span className="capitalize">
-                    {t === 'highlight' ? 'Highlight' : 'Recent'}
+                    {t === 'highlight' ? 'Yêu thích' : 'Gần đây'}
                   </span>
 
                   {isActive && (
@@ -221,9 +221,9 @@ export default function SpecialBlog({
         </div>
 
         <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
+          <h3 className="text-sm font-semibold text-gray-800">Lọc</h3>
           <div className="mt-3 flex flex-wrap gap-2">
-            {['All', 'Frontend', 'Backend', 'Design', 'Tips'].map((f) => (
+            {['All', 'Blog hay', 'ĐA dep trai', 'Mr.Gold'].map((f) => (
               <button
                 key={f}
                 className="rounded-md border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50"

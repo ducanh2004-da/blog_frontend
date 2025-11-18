@@ -59,7 +59,7 @@ const BlogItem = React.memo(function BlogItem({
         </Tooltip>
 
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          View post
+          Quay về
         </Typography>
 
         <Stack direction="row" spacing={1}>
@@ -72,7 +72,7 @@ const BlogItem = React.memo(function BlogItem({
               if (onShare) onShare();
             }}
           >
-            Copy link
+            Lưu link
           </Button>
         </Stack>
       </Stack>
@@ -181,7 +181,7 @@ const BlogItem = React.memo(function BlogItem({
                   */}
                   {!b?.content ? (
                     <Typography variant="body2" color="text.secondary">
-                      (No content)
+                      (Không có tag)
                     </Typography>
                   ) : (
                     <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>
