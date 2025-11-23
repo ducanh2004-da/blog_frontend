@@ -35,6 +35,7 @@ export const blogService = {
       updatedAt
       user {
         avatar
+        id
         email
         phoneNumber
         role
@@ -95,6 +96,43 @@ export const blogService = {
       variables: { getBlogByIdId: id }
     });
     return response.data.data.getBlogById.blogs;
+  },
+
+  getPostByUserId: async (userId: string | undefined) => {
+    if(!userId){
+      toast.error('get post fail');
+      throw new Error('get post fail');
+    }
+    const response = await apiConfig.post('', {
+        query: `
+        query Query($userId: String!) {
+  getBlogByUserId(userId: $userId) {
+    blogs {
+      content
+      createdAt
+      id
+      tags {
+        createdAt
+        id
+        name
+      }
+      title
+      updatedAt
+      user {
+        username
+        avatar
+        role
+        id
+        email
+      }
+    }
+    message
+    success
+  }
+}` ,
+      variables: { getBlogByIdId: userId }
+    });
+    return response.data.data.getBlogByUserId.blogs;
   },
 
   createPost: async (title: string, content: string, userId: string | null, tagId: string | null) => {

@@ -8,6 +8,9 @@ import { queryClient } from './configs/query-client.config.ts'
 import reactArrayToTree from 'react-array-to-tree'
 import App from './App.tsx'
 import './index.css'
+import { registerSW } from 'virtual:pwa-register'
+
+registerSW()
 
 const isProduction = import.meta.env.PROD || 'production'
 

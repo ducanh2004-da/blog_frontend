@@ -86,8 +86,13 @@ const PostItem = React.memo(function PostItem({
               Lưu
             </button>
 
-            <BlogForm editId={post.id} />
-
+            {
+              authUser?.id === post?.user?.id ? (
+                <BlogForm editId={post.id} />
+              ) : (
+                <></>
+              )
+            }
             <BlogLikes blogId={post.id} currentUserId={authUser?.id} />
           </div>
         </div>

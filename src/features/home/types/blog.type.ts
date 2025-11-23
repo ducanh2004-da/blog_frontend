@@ -17,6 +17,7 @@ export type Blog = {
   title: string;
   updatedAt: string;
   user: {
+    id?:  string;
     avatar: string;
     email: string;
     phoneNumber: string;

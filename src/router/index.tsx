@@ -8,7 +8,9 @@ import { MainLayout, AuthLayout, ErrorBoundary } from '../layouts';
 const Pages = {
   Main: {
     Home: lazy(() => import('../pages/Home')),
-    ViewDetail: lazy(() => import('../pages/ViewBlog'))
+    ViewDetail: lazy(() => import('../pages/ViewBlog')),
+    Profile: lazy(() => import('../pages/UserDetail')),
+    AIChatbot: lazy(() => import('../pages/AIChatbot'))
   },
   Auth: {
     Login: lazy(() => import('../pages/Login')),
@@ -18,9 +20,9 @@ const Pages = {
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
+  const userDetails = useAuthStore(state => state.userDetails)
   
-  if (!isAuthenticated) {
+  if (!userDetails) {
     return <Navigate to="/auth/login" replace />
   }
   
@@ -50,6 +52,8 @@ export const router = createBrowserRouter([
         )
       },
        { path: "viewDetail/:blogId", element: <Pages.Main.ViewDetail /> },
+       {path: "profile", element: <ProtectedRoute><Pages.Main.Profile /></ProtectedRoute>},
+       {path: "ai", element: <ProtectedRoute><Pages.Main.AIChatbot /></ProtectedRoute>}
     ],
     errorElement: <ErrorBoundary />,
   },
