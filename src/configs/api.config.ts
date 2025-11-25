@@ -3,7 +3,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../stores/auth.store'
 
 const apiConfig = axios.create({
-  baseURL: import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:3000/graphql',
+  baseURL: import.meta.env.VITE_API_BACKEND_URL || "https://blogplatform-backend-2ikg.onrender.com/graphql",
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
