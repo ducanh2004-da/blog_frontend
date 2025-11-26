@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
       },
        { path: "viewDetail/:blogId", element: <Pages.Main.ViewDetail /> },
        {path: "profile", element: <ProtectedRoute><Pages.Main.Profile /></ProtectedRoute>},
-       {path: "ai", element: <ProtectedRoute><Pages.Main.AIChatbot /></ProtectedRoute>}
+       {path: "ai", element: <Pages.Main.AIChatbot />}
     ],
     errorElement: <ErrorBoundary />,
   },

@@ -34,7 +34,7 @@ export function useChatSocket({
         }
 
         //socket.io thực hiện handshake → tạo kết nối WebSocket, gọi handleConnection ở backend
-        const socket = io("https://blogplatform-backend-2ikg.onrender.com/chat", {
+        const socket = io("http://localhost:3000/chat", {
           auth: { token: t },
           transports: ["websocket"],
           withCredentials: true,

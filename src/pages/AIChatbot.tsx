@@ -92,7 +92,7 @@ function parseModelResponse(data: any): string {
 }
 
 /** API base (Vite env or relative) **/
-const API_BASE =  "https://blogplatform-backend-2ikg.onrender.com";
+const API_BASE =  "https://backend-chatbot-query.onrender.com";
 
 /** Main component **/
 export default function AIChatbot() {
