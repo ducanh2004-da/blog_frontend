@@ -22,8 +22,8 @@ export default defineConfig({
         type: "module",
       },
       manifest: {
-        name: "Learnify Blog",
-        short_name: "Learnify",
+        name: "EduSocial",
+        short_name: "eduSocial",
         start_url: "/",
         display: "standalone",
         background_color: "#ffffff",
