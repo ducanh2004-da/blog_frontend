@@ -38,7 +38,7 @@ export default function Home() {
         <header className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">
-              Duc Anh's Blog
+              Sáng tạo thế giới của riêng bạn
             </h1>
             <p className="mt-1 text-sm text-gray-500">Lên ý tượng độc đáo cho content bạn nào</p>
           </div>
