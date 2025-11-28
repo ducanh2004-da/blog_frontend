@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Like, LikeProps, LikeResponse } from "../types/like.type";
 import { likeService } from "../service/like.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 // MUI
 import IconButton from "@mui/material/IconButton";
@@ -39,11 +40,24 @@ const LikeItem = React.memo(function LikeItem(props: {
   handleLike: () => void;
   isMutating: boolean;
 }) {
-  const { totalLike, likes, dialogOpen, hasLiked, handleOpen, handleClose, handleLike, isMutating } = props;
+  const {
+    totalLike,
+    likes,
+    dialogOpen,
+    hasLiked,
+    handleOpen,
+    handleClose,
+    handleLike,
+    isMutating,
+  } = props;
 
   return (
     <>
-      <div className="flex items-center gap-1" role="group" aria-label="like controls">
+      <div
+        className="flex items-center gap-1"
+        role="group"
+        aria-label="like controls"
+      >
         <IconButton
           aria-label={hasLiked ? "Bỏ like" : "Like"}
           size="large"
@@ -54,7 +68,13 @@ const LikeItem = React.memo(function LikeItem(props: {
           aria-pressed={hasLiked ?? false}
           disabled={isMutating}
         >
-          {isMutating ? <CircularProgress size={20} /> : hasLiked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          {isMutating ? (
+            <CircularProgress size={20} />
+          ) : hasLiked ? (
+            <FavoriteIcon />
+          ) : (
+            <FavoriteBorderIcon />
+          )}
         </IconButton>
 
         <Tooltip title={`${totalLike ?? 0} likes`}>
@@ -73,7 +93,13 @@ const LikeItem = React.memo(function LikeItem(props: {
         </Tooltip>
       </div>
 
-      <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth="sm" aria-label="like-list-dialog">
+      <Dialog
+        open={dialogOpen}
+        onClose={handleClose}
+        fullWidth
+        maxWidth="sm"
+        aria-label="like-list-dialog"
+      >
         <DialogTitle>
           <Typography variant="h6">Likes — {totalLike ?? 0}</Typography>
         </DialogTitle>
@@ -85,7 +111,11 @@ const LikeItem = React.memo(function LikeItem(props: {
                 <ListItem key={like.id} divider>
                   <ListItemAvatar>
                     {like.user?.avatar ? (
-                      <Avatar alt={like.user.username} src={like.user.avatar} sx={{ width: 36, height: 36 }} />
+                      <Avatar
+                        alt={like.user.username}
+                        src={like.user.avatar}
+                        sx={{ width: 36, height: 36 }}
+                      />
                     ) : (
                       <Avatar sx={{ width: 36, height: 36 }}>
                         {like.user?.username?.charAt(0)?.toUpperCase() ?? "U"}
@@ -93,7 +123,10 @@ const LikeItem = React.memo(function LikeItem(props: {
                     )}
                   </ListItemAvatar>
 
-                  <ListItemText primary={like.user?.username ?? "Unknown"} secondary={formatDate(like.createdAt)} />
+                  <ListItemText
+                    primary={like.user?.username ?? "Unknown"}
+                    secondary={formatDate(like.createdAt)}
+                  />
                 </ListItem>
               ))}
             </List>
@@ -114,12 +147,23 @@ const LikeItem = React.memo(function LikeItem(props: {
   );
 });
 
-export default function BlogLikes({ blogId, open = false, onClose, currentUserId }: LikeProps) {
+export default function BlogLikes({
+  blogId,
+  open = false,
+  onClose,
+  currentUserId,
+}: LikeProps) {
   const [dialogOpen, setDialogOpen] = useState(Boolean(open));
   const queryClient = useQueryClient();
+  const authState = useAuthStore.getState();
 
   // Query: scoped by blogId
-  const { data: likeReturn, isLoading, isError, refetch } = useQuery<LikeResponse>({
+  const {
+    data: likeReturn,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<LikeResponse>({
     queryKey: ["likes", blogId],
     queryFn: () => likeService.getLikeByBlog(blogId),
     enabled: Boolean(blogId),
@@ -128,7 +172,8 @@ export default function BlogLikes({ blogId, open = false, onClose, currentUserId
 
   // Mutations: note we use the same queryClient instance via hook
   const createLike = useMutation({
-    mutationFn: ({ blogId }: { blogId: string }) => likeService.createLike(blogId),
+    mutationFn: ({ blogId }: { blogId: string }) =>
+      likeService.createLike(blogId),
     onSuccess: () => {
       // invalidate the exact query key used by useQuery to refresh
       queryClient.invalidateQueries({ queryKey: ["likes", blogId] });
@@ -174,6 +219,11 @@ export default function BlogLikes({ blogId, open = false, onClose, currentUserId
   const handleLike = async () => {
     if (!blogId) return toast.error("Blog ID missing");
     try {
+      const currentUserId = authState.user?.id ?? authState.userDetails?.id;
+      if (!currentUserId) {
+        toast.error("Bạn chưa đăng nhập");
+        return;
+      }
       if (!hasLiked) {
         await createLike.mutateAsync({ blogId });
       } else {
@@ -209,7 +259,7 @@ export default function BlogLikes({ blogId, open = false, onClose, currentUserId
         <LikeItem
           totalLike={totalLike}
           likes={likes}
-          hasLiked={hasLiked}             // <-- SỬA: truyền biến đúng
+          hasLiked={hasLiked} // <-- SỬA: truyền biến đúng
           dialogOpen={dialogOpen}
           handleOpen={handleLocalOpen}
           handleClose={handleLocalClose}

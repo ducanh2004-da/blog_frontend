@@ -46,6 +46,7 @@ export default function BlogComments({ blogId }: CommentProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { user: authUser } = useAuthStore();
+  const authState = useAuthStore.getState();
 
   // fetch comments
   const {
@@ -144,6 +145,11 @@ export default function BlogComments({ blogId }: CommentProps) {
       return;
     }
     try {
+      const currentUserId = authState.user?.id ?? authState.userDetails?.id;
+      if (!currentUserId) {
+        toast.error('Bạn chưa đăng nhập');
+        return;
+      }
       await createComment.mutateAsync({ content, blogId });
       setValue("");
       setCharCount(0);
@@ -272,10 +278,7 @@ export default function BlogComments({ blogId }: CommentProps) {
           spacing={2}
           alignItems="flex-start"
         >
-          <Avatar
-            alt={"Bạn"}
-            sx={{ width: 48, height: 48 }}
-          >
+          <Avatar alt={"Bạn"} sx={{ width: 48, height: 48 }}>
             {"Bạn"}
           </Avatar>
           <Box sx={{ flex: 1 }}>

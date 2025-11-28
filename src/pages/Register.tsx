@@ -137,7 +137,7 @@ export default function Register() {
               transition={{ delay: 0.2 }}
               className="text-4xl font-extrabold mb-4"
             >
-              Gia nhập team nào bé ;))
+              Vào team anh xem có gì nào ;))
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0, x: -20 }}

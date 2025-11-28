@@ -1,27 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { blogService } from '../service/blog.service';
-import { tagService } from '../service/tag.service';
-import { Toaster, toast } from 'react-hot-toast';
-import { useAuthStore } from '@/stores/auth.store';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import { blogService } from "../service/blog.service";
+import { tagService } from "../service/tag.service";
+import { Toaster, toast } from "react-hot-toast";
+import { useAuthStore } from "@/stores/auth.store";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // MUI
-import { useTheme } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import { BlogFormProps } from '../types/blog.type';
+import { useTheme } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import { BlogFormProps } from "../types/blog.type";
 
 export default function BlogForm({
   editId = null,
@@ -30,6 +30,7 @@ export default function BlogForm({
 }: BlogFormProps) {
   const theme = useTheme();
   const { user: authUser } = useAuthStore();
+  const authState = useAuthStore.getState();
   const queryClient = useQueryClient();
 
   // local UI state (kept in sync with parent prop `open`)
@@ -46,11 +47,11 @@ export default function BlogForm({
     tags?: Array<{ name: string }> | { name: string };
   }
   const [result, setResult] = useState<BlogPost | null>(null);
-  const [message, setMessage] = useState('');
-  const [tagId, setTagId] = useState('');
+  const [message, setMessage] = useState("");
+  const [tagId, setTagId] = useState("");
 
   // form state
-  const [formValues, setFormValues] = useState({ title: '', content: '' });
+  const [formValues, setFormValues] = useState({ title: "", content: "" });
 
   // keep internal dialog sync with external `open` prop
   useEffect(() => {
@@ -61,9 +62,9 @@ export default function BlogForm({
   const {
     data: tagOptions,
     isLoading: tagsLoading,
-    isError: tagsError
+    isError: tagsError,
   } = useQuery({
-    queryKey: ['tags'],
+    queryKey: ["tags"],
     queryFn: () => tagService.getTags(),
     staleTime: 1000 * 60 * 5,
   });
@@ -72,9 +73,9 @@ export default function BlogForm({
   const {
     data: postData,
     isLoading: postLoading,
-    isError: postError
+    isError: postError,
   } = useQuery({
-    queryKey: ['post', editId],
+    queryKey: ["post", editId],
     queryFn: () => blogService.getPostById(String(editId)),
     enabled: Boolean(editId && dialogOpen),
     staleTime: 1000 * 60 * 5,
@@ -88,54 +89,80 @@ export default function BlogForm({
       const post = Array.isArray(postData) ? postData[0] : postData;
       if (post) {
         setFormValues({
-          title: post.title ?? '',
-          content: post.content ?? ''
+          title: post.title ?? "",
+          content: post.content ?? "",
         });
         // prefer tag id (post.tags may be array)
-        setTagId(post.tags?.[0]?.id ?? '');
+        setTagId(post.tags?.[0]?.id ?? "");
       }
     } else if (!editId && dialogOpen) {
       // new blog: reset
-      setFormValues({ title: '', content: '' });
-      setTagId('');
+      setFormValues({ title: "", content: "" });
+      setTagId("");
     }
   }, [postData, editId, dialogOpen]);
 
   // Mutations
   const createBlog = useMutation({
-    mutationFn: ({ title, content, userId, tagId }: { title: string, content: string, userId: string | null, tagId: string | null }) =>
-      blogService.createPost(title, content, userId, tagId),
+    mutationFn: ({
+      title,
+      content,
+      userId,
+      tagId,
+    }: {
+      title: string;
+      content: string;
+      userId: string | null;
+      tagId: string | null;
+    }) => blogService.createPost(title, content, userId, tagId),
     onSuccess: (data) => {
       // data is the GraphQL wrapper (createBlog) per your service
       // try to extract created blog
-      const created = data?.blogs ? (Array.isArray(data.blogs) ? data.blogs[0] : data.blogs) : null;
-      queryClient.invalidateQueries({ queryKey: ['blogs'] });
+      const created = data?.blogs
+        ? Array.isArray(data.blogs)
+          ? data.blogs[0]
+          : data.blogs
+        : null;
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
       setResult(created);
-      setMessage(data?.message ?? 'Created');
+      setMessage(data?.message ?? "Created");
       setInfoOpen(true);
-      toast.success(data?.message ?? 'Blog created');
+      toast.success(data?.message ?? "Blog created");
     },
     onError: (err) => {
-      console.error('createBlog error', err);
-      toast.error(err?.message ?? 'Create failed');
-    }
+      console.error("createBlog error", err);
+      toast.error(err?.message ?? "Create failed");
+    },
   });
 
   const updateBlog = useMutation({
-    mutationFn: ({ id, title, content, tagId }: { id: string, title: string, content: string, tagId: string | null }) =>
-      blogService.updatePost(id, title, content, tagId),
+    mutationFn: ({
+      id,
+      title,
+      content,
+      tagId,
+    }: {
+      id: string;
+      title: string;
+      content: string;
+      tagId: string | null;
+    }) => blogService.updatePost(id, title, content, tagId),
     onSuccess: (data) => {
-      const updated = data?.blogs ? (Array.isArray(data.blogs) ? data.blogs[0] : data.blogs) : null;
-      queryClient.invalidateQueries({ queryKey: ['blogs'] });
+      const updated = data?.blogs
+        ? Array.isArray(data.blogs)
+          ? data.blogs[0]
+          : data.blogs
+        : null;
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
       setResult(updated);
-      setMessage(data?.message ?? 'Updated');
+      setMessage(data?.message ?? "Updated");
       setInfoOpen(true);
-      toast.success(data?.message ?? 'Blog updated');
+      toast.success(data?.message ?? "Blog updated");
     },
     onError: (err) => {
-      console.error('updateBlog error', err);
-      toast.error(err?.message ?? 'Update failed');
-    }
+      console.error("updateBlog error", err);
+      toast.error(err?.message ?? "Update failed");
+    },
   });
 
   // handlers
@@ -148,12 +175,12 @@ export default function BlogForm({
     setInfoOpen(false);
     // optionally close info and clear result
     setResult(null);
-    setMessage('');
+    setMessage("");
   };
 
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
-    setFormValues(prev => ({ ...prev, [name]: value }));
+    setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTagChange = (e: any) => {
@@ -162,11 +189,11 @@ export default function BlogForm({
 
   const validate = () => {
     if (!formValues.title || !formValues.title.trim()) {
-      toast.error('Title is required');
+      toast.error("Title is required");
       return false;
     }
     if (!formValues.content || !formValues.content.trim()) {
-      toast.error('Content is required');
+      toast.error("Content is required");
       return false;
     }
     // optional: require tag
@@ -177,6 +204,11 @@ export default function BlogForm({
   const handleSubmit = async (event: any) => {
     event.preventDefault();
     if (!validate()) return;
+    const currentUserId = authState.user?.id ?? authState.userDetails?.id;
+    if (!currentUserId) {
+      toast.error("Bạn chưa đăng nhập");
+      return;
+    }
 
     setLoadingLocal(true);
     setErrorLocal(null);
@@ -188,7 +220,7 @@ export default function BlogForm({
           id: String(editId),
           title: formValues.title,
           content: formValues.content,
-          tagId: tagId || null
+          tagId: tagId || null,
         });
       } else {
         // create
@@ -196,12 +228,12 @@ export default function BlogForm({
           title: formValues.title,
           content: formValues.content,
           userId: authUser?.id ?? null,
-          tagId: tagId || null
+          tagId: tagId || null,
         });
 
         // reset only when created
-        setFormValues({ title: '', content: '' });
-        setTagId('');
+        setFormValues({ title: "", content: "" });
+        setTagId("");
       }
 
       // close dialog after success (mutations have their own success handlers)
@@ -209,33 +241,47 @@ export default function BlogForm({
       if (onClose) onClose();
     } catch (err) {
       console.error(err);
-      toast.error('Unexpected error');
+      toast.error("Unexpected error");
     } finally {
       setLoadingLocal(false);
     }
   };
 
   // UI helpers
-  const currentLoading = loadingLocal || createBlog.isPending || updateBlog.isPending;
+  const currentLoading =
+    loadingLocal || createBlog.isPending || updateBlog.isPending;
 
   return (
     <React.Fragment>
       {/* Optional: Add button to open dialog locally */}
-      <Button className="md:inline-flex items-center gap-2 rounded-lg border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200" variant="outlined" onClick={() => setDialogOpen(true)}>
-        {editId ? 'Sửa'  : 'Thêm bài mới +'}
-
+      <Button
+        className="md:inline-flex items-center gap-2 rounded-lg border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        variant="outlined"
+        onClick={() => setDialogOpen(true)}
+      >
+        {editId ? "Sửa" : "Thêm bài mới +"}
       </Button>
 
       <Toaster position="top-right" />
 
-      <Dialog open={dialogOpen} onClose={handleLocalClose} fullWidth maxWidth="sm">
-        <DialogTitle>{editId ? 'Sửa bài viết' : 'Thêm bài viết'}</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleLocalClose}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>{editId ? "Sửa bài viết" : "Thêm bài viết"}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {editId ? 'Chỉnh sửa bài viết của bạn' : "Thêm bài viết mới nào"}
+            {editId ? "Chỉnh sửa bài viết của bạn" : "Thêm bài viết mới nào"}
           </DialogContentText>
 
-          <Box component="form" id="blog-form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            id="blog-form"
+            onSubmit={handleSubmit}
+            sx={{ mt: 1 }}
+          >
             <TextField
               autoFocus
               required
@@ -274,15 +320,27 @@ export default function BlogForm({
                 onChange={handleTagChange}
                 input={<OutlinedInput label="Tag" />}
               >
-                {tagsLoading && <MenuItem value=""><em>Loading tags...</em></MenuItem>}
-                {!tagsLoading && (!tagOptions || (Array.isArray(tagOptions) && tagOptions.length === 0)) && (
-                  <MenuItem value=""><em>Chưa có tags</em></MenuItem>
-                )}
-                {Array.isArray(tagOptions) && tagOptions.map((t) => (
-                  <MenuItem key={t.id ?? t._id ?? t.name} value={t.id ?? t._id ?? t.name}>
-                    {t.name ?? t.title ?? String(t)}
+                {tagsLoading && (
+                  <MenuItem value="">
+                    <em>Loading tags...</em>
                   </MenuItem>
-                ))}
+                )}
+                {!tagsLoading &&
+                  (!tagOptions ||
+                    (Array.isArray(tagOptions) && tagOptions.length === 0)) && (
+                    <MenuItem value="">
+                      <em>Chưa có tags</em>
+                    </MenuItem>
+                  )}
+                {Array.isArray(tagOptions) &&
+                  tagOptions.map((t) => (
+                    <MenuItem
+                      key={t.id ?? t._id ?? t.name}
+                      value={t.id ?? t._id ?? t.name}
+                    >
+                      {t.name ?? t.title ?? String(t)}
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
           </Box>
@@ -291,29 +349,45 @@ export default function BlogForm({
         <DialogActions>
           <Button onClick={handleLocalClose}>Hủy</Button>
           <Button type="submit" form="blog-form" disabled={currentLoading}>
-            {currentLoading ? (editId ? 'Đang lưu...' : 'Đang gửi...') : (editId ? 'Lưu' : 'Gửi')}
+            {currentLoading
+              ? editId
+                ? "Đang lưu..."
+                : "Đang gửi..."
+              : editId
+              ? "Lưu"
+              : "Gửi"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {errorLocal && (
-        <Box sx={{ color: 'error.main', mt: 1 }}>
+        <Box sx={{ color: "error.main", mt: 1 }}>
           Error: {errorLocal ?? JSON.stringify(errorLocal)}
         </Box>
       )}
 
       {/* Info dialog after success */}
       {result && (
-        <Dialog open={infoOpen} onClose={handleInfoClose} fullWidth maxWidth="sm">
+        <Dialog
+          open={infoOpen}
+          onClose={handleInfoClose}
+          fullWidth
+          maxWidth="sm"
+        >
           <DialogTitle>{message}</DialogTitle>
           <DialogContent>
             <Box sx={{ mt: 2 }}>
-              <strong>{editId ? 'Blog Updated:' : 'Blog Created:'}</strong>
+              <strong>{editId ? "Blog Updated:" : "Blog Created:"}</strong>
               <div>ID: {result?.id}</div>
               <div>Title: {result.title}</div>
               <div>Content: {result.content}</div>
               <div>Updated At: {result.updatedAt ?? result.createdAt}</div>
-              <div>Tags: {Array.isArray(result.tags) ? result.tags.map(t => t.name).join(', ') : (result.tags?.name ?? '')}</div>
+              <div>
+                Tags:{" "}
+                {Array.isArray(result.tags)
+                  ? result.tags.map((t) => t.name).join(", ")
+                  : result.tags?.name ?? ""}
+              </div>
             </Box>
           </DialogContent>
           <DialogActions>
