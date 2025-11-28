@@ -92,7 +92,7 @@ function parseModelResponse(data: any): string {
 }
 
 /** API base (Vite env or relative) **/
-const API_BASE =  "https://backend-chatbot-query.onrender.com";
+const API_BASE =  import.meta.env.VITE_API_BACKEND_URL2;
 
 /** Main component **/
 export default function AIChatbot() {
@@ -134,9 +134,9 @@ export default function AIChatbot() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const quickPrompts = [
-    "Hãy lấy cho tôi các bài blog có tác giả là Do Duc Anh",
+    "Hãy lấy cho tôi các bài blog có tác giả là Đỗ Đức Anh",
     "Cho tôi 5 bài blog gần nhất",
-    "Danh sách bài có tag 'react'",
+    "Danh sách bài có tag 'học tập'",
   ];
 
   useEffect(() => {
