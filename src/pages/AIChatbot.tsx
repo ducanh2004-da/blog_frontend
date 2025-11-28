@@ -135,8 +135,7 @@ export default function AIChatbot() {
 
   const quickPrompts = [
     "Hãy lấy cho tôi các bài blog có tác giả là Đỗ Đức Anh",
-    "Cho tôi 5 bài blog gần nhất",
-    "Danh sách bài có tag 'học tập'",
+    "Cho tôi 3 bài blog gần nhất",
   ];
 
   useEffect(() => {
@@ -317,7 +316,7 @@ export default function AIChatbot() {
             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-semibold text-lg">AI</div>
             <div>
               <div className="text-sm text-slate-700 dark:text-slate-200 font-semibold">{conversationTitle}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">Trợ lý AI — chat hoặc Query DB bằng ngôn ngữ tự nhiên</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">Trợ lý AI chat hoặc Query DB bằng ngôn ngữ tự nhiên</div>
             </div>
           </div>
 
@@ -341,7 +340,7 @@ export default function AIChatbot() {
               {messages.length === 0 && (
                 <div className="text-center text-slate-500 mt-10">
                   <div className="mx-auto w-12 h-12 text-slate-400">💬</div>
-                  <p className="mt-3">Không có tin nhắn — bắt đầu bằng cách gửi một câu hỏi 👇</p>
+                  <p className="mt-3">Không có tin nhắn</p>
                 </div>
               )}
 
@@ -401,7 +400,7 @@ export default function AIChatbot() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={isDbQuery ? "Nhập truy vấn bằng ngôn ngữ tự nhiên, ví dụ: 'Hãy lấy 3 bài blog của tác giả Đỗ Đức Anh'" : "Hỏi bất cứ điều gì — ví dụ: 'Làm sao để học React hiệu quả?'"}
+                      placeholder={isDbQuery ? "Nhập thông tin bài blog bạn muốn tìm, vd: 'Tìm các bài blog gần đây nhất'" : "Chat vui với A.I, ví dụ: 'Làm sao để học React hiệu quả'"}
                       className="w-full min-h-[46px] max-h-40 resize-none rounded-xl p-3 border dark:border-slate-800 bg-transparent focus:outline-none focus:ring-1 focus:ring-emerald-400"
                       aria-label="Message input"
                     />
