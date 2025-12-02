@@ -11,7 +11,7 @@ type UseChatSocketOptions = {
 
 export function useChatSocket({
   conversationId,
-  apiUrl = import.meta.env.VITE_API_BACKEND_URL,
+  apiUrl = import.meta.env.VITE_WEB_SOCKET,
   onMessage,
 }: UseChatSocketOptions) {
 
@@ -34,7 +34,7 @@ export function useChatSocket({
         }
 
         //socket.io thực hiện handshake → tạo kết nối WebSocket, gọi handleConnection ở backend
-        const socket = io(`https://blogplatform-backend-2ikg.onrender.com/chat`, {
+        const socket = io(`${import.meta.env.VITE_WEB_SOCKET}/chat`, {
           auth: { token: t },
           transports: ["websocket"],
           withCredentials: true,
