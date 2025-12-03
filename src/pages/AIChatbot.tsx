@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
-import { Image as ImageIcon, Plus, Loader2, Trash, Send } from "lucide-react";
+import { Image as ImageIcon, Plus, Loader2, Trash, Send, Volume2 } from "lucide-react";
 import Avatar from "@mui/material/Avatar";
 import Tooltip from "@mui/material/Tooltip";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -92,7 +92,7 @@ function parseModelResponse(data: any): string {
 }
 
 /** API base (Vite env or relative) **/
-const API_BASE =  import.meta.env.VITE_API_BACKEND_URL2;
+const API_BASE = import.meta.env.VITE_API_BACKEND_URL2;
 
 /** Main component **/
 export default function AIChatbot() {
@@ -130,6 +130,11 @@ export default function AIChatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const [isDbQuery, setIsDbQuery] = useState(false); // toggle for DB queries
 
+  // TTS state
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(true);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string | null>(null);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -149,6 +154,67 @@ export default function AIChatbot() {
       containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [messages, isTyping]);
+
+  // Setup voices
+  useEffect(() => {
+    function loadVoices() {
+      const synth = (window as any).speechSynthesis;
+      if (!synth) {
+        setAvailableVoices([]);
+        return;
+      }
+      const voices = synth.getVoices() as SpeechSynthesisVoice[];
+      // prefer unique voices (sometimes duplicates exist)
+      const uniq = voices.filter((v, i, arr) => arr.findIndex(x => x.voiceURI === v.voiceURI) === i);
+      setAvailableVoices(uniq);
+      // if none selected, pick a Google voice if possible, else pick a matching vi-VN, else first
+      if (!selectedVoiceURI) {
+        const google = uniq.find(v => /google/i.test(v.name));
+        const vi = uniq.find(v => v.lang && v.lang.startsWith("vi"));
+        setSelectedVoiceURI((google || vi || uniq[0])?.voiceURI ?? null);
+      }
+    }
+    loadVoices();
+    // some browsers fire voiceschanged
+    (window as any).speechSynthesis?.addEventListener?.("voiceschanged", loadVoices);
+    return () => {
+      (window as any).speechSynthesis?.removeEventListener?.("voiceschanged", loadVoices);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // speak helper
+  function speakText(text: string, langFallback = "vi-VN") {
+    if (!ttsEnabled) return;
+    if (!text || typeof window === "undefined") return;
+    const synth = (window as any).speechSynthesis;
+    if (!synth) return;
+    try {
+      // cancel any ongoing utterances
+      synth.cancel();
+    } catch {}
+    const utter = new SpeechSynthesisUtterance(text);
+    // choose selected voice
+    const voice = availableVoices.find((v) => v.voiceURI === selectedVoiceURI) || availableVoices.find(v => /google/i.test(v.name)) || availableVoices.find(v => v.lang?.startsWith(langFallback.split("-")[0])) || availableVoices[0];
+    if (voice) {
+      try {
+        utter.voice = voice;
+        utter.lang = voice.lang || langFallback;
+      } catch {}
+    } else {
+      utter.lang = langFallback;
+    }
+    // safe event hooks (optional)
+    utter.onend = () => {
+      // do nothing or could update UI
+    };
+    try {
+      synth.speak(utter);
+    } catch (e) {
+      // some browsers block autoplay; user must interact first
+      console.warn("TTS speak error:", e);
+    }
+  }
 
   function addMessage(msg: Message) {
     setMessages((s) => [...s, msg]);
@@ -195,13 +261,18 @@ export default function AIChatbot() {
       if (isDbQuery) {
         // expected shape: { rows: [...], spec: {...} } or { error: "..." }
         if (data?.error) {
-          replaceMessageText(assistantMsgId, { text: `Error: ${data.error}`, loading: false, error: data.error, time: nowTime() });
+          const errMsg = `Error: ${data.error}`;
+          replaceMessageText(assistantMsgId, { text: errMsg, loading: false, error: data.error, time: nowTime() });
+          // speak error if enabled
+          speakText(errMsg);
         } else {
           const rows = Array.isArray(data.rows) ? data.rows : [];
           const spec = data.spec ?? null;
           const preview = formatRowsPreview(rows);
           const summaryText = rows.length === 0 ? "Không tìm thấy kết quả." : `Tìm thấy ${rows.length} kết quả. Hiển thị ${Math.min(rows.length, 5)} mục.`;
           replaceMessageText(assistantMsgId, { text: summaryText, loading: false, error: null, data: { rows: preview, rawRows: rows, spec }, time: nowTime() });
+          // speak summary
+          speakText(summaryText);
         }
       } else {
         // normal chat response - parse robustly
@@ -222,12 +293,17 @@ export default function AIChatbot() {
           parsedText = parseModelResponse(data);
         }
         replaceMessageText(assistantMsgId, { text: parsedText, loading: false, error: null, time: nowTime() });
+        // speak the parsed text
+        speakText(parsedText);
       }
 
       setIsTyping(false);
     } catch (err: any) {
       console.error("sendMessageToBackend error:", err);
-      replaceMessageText(assistantMsgId, { text: err?.message ?? "Lỗi khi gọi server", loading: false, error: err?.message ?? "error", time: nowTime() });
+      const msg = err?.message ?? "Lỗi khi gọi server";
+      replaceMessageText(assistantMsgId, { text: msg, loading: false, error: err?.message ?? "error", time: nowTime() });
+      // speak error if desired
+      speakText(msg);
       setIsTyping(false);
     } finally {
       setLoadingSend(false);
@@ -284,6 +360,12 @@ export default function AIChatbot() {
     setIsTyping(true);
     // If this AI message had data (db), keep isDbQuery true for retry attempt.
     sendMessageToBackend(prevUser.text, msg.id);
+  }
+
+  // replay a specific message (manual play)
+  function replayMessage(m: Message) {
+    if (m.role !== "ai" || !m.text) return;
+    speakText(m.text);
   }
 
   // render rows preview under bubble
@@ -362,6 +444,18 @@ export default function AIChatbot() {
                           {m.error && (
                             <button onClick={() => retryMessage(m)} className="ml-2 text-xs text-rose-500 underline">Retry</button>
                           )}
+
+                          {/* replay button for AI messages (manual play) */}
+                          {m.role === "ai" && !m.loading && !m.error && m.text && (
+                            <button
+                              onClick={() => replayMessage(m)}
+                              className="ml-2 p-1 rounded text-xs border hover:bg-slate-50 dark:hover:bg-slate-700"
+                              aria-label="Replay TTS"
+                              title="Phát lại âm thanh"
+                            >
+                              <Volume2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -422,21 +516,46 @@ export default function AIChatbot() {
 
                         <div className="text-xs text-slate-500 mr-2 hidden sm:block">{isDbQuery ? "DB mode — server will translate to safe spec" : "Chat mode"}</div>
 
-                        <button
-                          onClick={() => send()}
-                          disabled={loadingSend || !input.trim()}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${input.trim() ? "bg-emerald-500 text-white hover:opacity-95" : "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700/40"}`}
-                          aria-label="Send message"
-                        >
-                          {loadingSend ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                          <span className="hidden sm:inline">Gửi</span>
-                        </button>
+                        {/* TTS controls */}
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs flex items-center gap-2">
+                            <input type="checkbox" checked={ttsEnabled} onChange={(e) => setTtsEnabled(e.target.checked)} />
+                            <span className="text-xs text-slate-600 dark:text-slate-300">TTS</span>
+                          </label>
+
+                          {/* voice select (small) */}
+                          {/* <select
+                            value={selectedVoiceURI ?? ""}
+                            onChange={(e) => setSelectedVoiceURI(e.target.value || null)}
+                            className="text-xs p-1 rounded border bg-white dark:bg-slate-800"
+                            title="Chọn giọng (nếu có)"
+                          >
+                            {availableVoices.length === 0 && <option value="">(No voices)</option>}
+                            {availableVoices.map((v) => (
+                              <option key={v.voiceURI} value={v.voiceURI}>
+                                {v.name} {v.lang ? `(${v.lang})` : ""}
+                              </option>
+                            ))}
+                          </select> */}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => send()}
+                            disabled={loadingSend || !input.trim()}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${input.trim() ? "bg-emerald-500 text-white hover:opacity-95" : "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700/40"}`}
+                            aria-label="Send message"
+                          >
+                            {loadingSend ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            <span className="hidden sm:inline">Gửi</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-xs text-slate-500 dark:text-slate-400">Tip: Enter gửi, Shift+Enter xuống dòng. Bật "Query DB" để lấy dữ liệu từ database bằng ngôn ngữ tự nhiên.</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">Tip: Enter gửi, Shift+Enter xuống dòng. Bật "Query DB" để lấy dữ liệu từ database bằng ngôn ngữ tự nhiên. Nếu trình duyệt chặn âm thanh, bạn cần tương tác (click) với trang trước khi TTS hoạt động.</div>
               </div>
             </div>
           </main>
