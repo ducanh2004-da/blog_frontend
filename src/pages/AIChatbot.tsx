@@ -1,3 +1,6 @@
+// File: src/components/AIChatbot.tsx
+// Updated AI chat component that uses chatAiService.chatAi and chatAiService.NLtoSQL
+
 import React, { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { Image as ImageIcon, Plus, Loader2, Trash, Send, Volume2 } from "lucide-react";
@@ -6,6 +9,7 @@ import Tooltip from "@mui/material/Tooltip";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import IconButton from "@mui/material/IconButton";
 import { useNavigate } from "react-router-dom";
+import { chatAiService } from "@/features/AIchatbot/service/aiChatbot.service";
 
 /** Types **/
 type Role = "user" | "ai" | "system";
@@ -36,7 +40,7 @@ function parseModelResponse(data: any): string {
   if (data === null || data === undefined) return "";
   if (typeof data === "object" && typeof (data as any).text === "string") {
     const innerStr = (data as any).text.trim();
-    if ((innerStr.startsWith("{") || innerStr.startsWith("["))) {
+    if (innerStr.startsWith("{") || innerStr.startsWith("[")) {
       try {
         const inner = JSON.parse(innerStr);
         return parseModelResponse(inner);
@@ -46,7 +50,7 @@ function parseModelResponse(data: any): string {
   if (typeof data === "string") {
     const s = data.trim();
     if (s === "") return "";
-    if ((s.startsWith("{") || s.startsWith("["))) {
+    if (s.startsWith("{") || s.startsWith("[")) {
       try {
         const parsed = JSON.parse(s);
         return parseModelResponse(parsed);
@@ -91,36 +95,24 @@ function parseModelResponse(data: any): string {
   return String(data);
 }
 
-/** API base (Vite env or relative) **/
-const API_BASE = import.meta.env.VITE_API_BACKEND_URL2;
-
 /** Main component **/
 export default function AIChatbot() {
   const { user: authUser } = useAuthStore();
   const navigate = useNavigate();
 
+  const initialGreeting: Message = {
+    id: uid("m"),
+    role: "ai",
+    text: "Chào bạn! Mình là trợ lý AI — bạn có thể chat bình thường hoặc bật 'Query DB' để truy vấn database bằng ngôn ngữ tự nhiên.",
+    time: nowTime(),
+  };
+
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw
-        ? (JSON.parse(raw) as Message[])
-        : [
-            {
-              id: uid("m"),
-              role: "ai",
-              text: "Chào bạn! Mình là trợ lý AI — bạn có thể chat bình thường hoặc bật 'Query DB' để truy vấn database bằng ngôn ngữ tự nhiên.",
-              time: nowTime(),
-            },
-          ];
+      return raw ? (JSON.parse(raw) as Message[]) : [initialGreeting];
     } catch {
-      return [
-        {
-          id: uid("m"),
-          role: "ai",
-          text: "Chào bạn! Mình là trợ lý AI — bạn có thể chat bình thường hoặc bật 'Query DB' để truy vấn database bằng ngôn ngữ tự nhiên.",
-          time: nowTime(),
-        },
-      ];
+      return [initialGreeting];
     }
   });
 
@@ -164,10 +156,8 @@ export default function AIChatbot() {
         return;
       }
       const voices = synth.getVoices() as SpeechSynthesisVoice[];
-      // prefer unique voices (sometimes duplicates exist)
       const uniq = voices.filter((v, i, arr) => arr.findIndex(x => x.voiceURI === v.voiceURI) === i);
       setAvailableVoices(uniq);
-      // if none selected, pick a Google voice if possible, else pick a matching vi-VN, else first
       if (!selectedVoiceURI) {
         const google = uniq.find(v => /google/i.test(v.name));
         const vi = uniq.find(v => v.lang && v.lang.startsWith("vi"));
@@ -175,7 +165,6 @@ export default function AIChatbot() {
       }
     }
     loadVoices();
-    // some browsers fire voiceschanged
     (window as any).speechSynthesis?.addEventListener?.("voiceschanged", loadVoices);
     return () => {
       (window as any).speechSynthesis?.removeEventListener?.("voiceschanged", loadVoices);
@@ -190,11 +179,9 @@ export default function AIChatbot() {
     const synth = (window as any).speechSynthesis;
     if (!synth) return;
     try {
-      // cancel any ongoing utterances
       synth.cancel();
     } catch {}
     const utter = new SpeechSynthesisUtterance(text);
-    // choose selected voice
     const voice = availableVoices.find((v) => v.voiceURI === selectedVoiceURI) || availableVoices.find(v => /google/i.test(v.name)) || availableVoices.find(v => v.lang?.startsWith(langFallback.split("-")[0])) || availableVoices[0];
     if (voice) {
       try {
@@ -204,14 +191,10 @@ export default function AIChatbot() {
     } else {
       utter.lang = langFallback;
     }
-    // safe event hooks (optional)
-    utter.onend = () => {
-      // do nothing or could update UI
-    };
+    utter.onend = () => {};
     try {
       synth.speak(utter);
     } catch (e) {
-      // some browsers block autoplay; user must interact first
       console.warn("TTS speak error:", e);
     }
   }
@@ -227,85 +210,57 @@ export default function AIChatbot() {
   function formatRowsPreview(rows: any[]): { title: string; subtitle?: string; raw?: any }[] {
     if (!Array.isArray(rows)) return [];
     return rows.map((r) => {
-      // try common Blog fields
       if (r.title || r.content) {
-        const title = r.title ?? (r.id ? `Blog ${r.id.slice(0, 6)}` : "Untitled");
+        const title = r.title ?? (r.id ? `Blog ${String(r.id).slice(0, 6)}` : "Untitled");
         const subtitle = r.content ? (typeof r.content === "string" ? (r.content.slice(0, 180) + (r.content.length > 180 ? "..." : "")) : JSON.stringify(r.content).slice(0, 180)) : undefined;
         return { title, subtitle, raw: r };
       }
-      // generic: pick first string field as title
-      const keys = Object.keys(r);
+      const keys = Object.keys(r || {});
       const firstStr = keys.map(k => r[k]).find(v => typeof v === "string");
       const title = firstStr ? (String(firstStr).slice(0, 120) + (String(firstStr).length > 120 ? "..." : "")) : (r.id ? String(r.id).slice(0, 12) : JSON.stringify(r).slice(0, 60));
       return { title, subtitle: undefined, raw: r };
     });
   }
 
-  // send either to normal chat or to nlquery endpoint
+  // send either to chatAiService.chatAi or chatAiService.NLtoSQL
   async function sendMessageToBackend(inputText: string, assistantMsgId: string) {
-    const url = isDbQuery ? `${API_BASE}/api/nlquery` : `${API_BASE}/api/chat`;
-    const body = isDbQuery ? { q: inputText } : { message: inputText };
-
     try {
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!resp.ok) {
-        const txt = await resp.text();
-        throw new Error(`Server error: ${resp.status} ${txt}`);
-      }
-      const data = await resp.json();
-
       if (isDbQuery) {
-        // expected shape: { rows: [...], spec: {...} } or { error: "..." }
-        if (data?.error) {
-          const errMsg = `Error: ${data.error}`;
-          replaceMessageText(assistantMsgId, { text: errMsg, loading: false, error: data.error, time: nowTime() });
-          // speak error if enabled
-          speakText(errMsg);
+        // NL to SQL -> expect rows array (chatAiService.NLtoSQL returns rows as implemented)
+        const rows = await chatAiService.NLtoSQL(inputText);
+        if (!rows || !Array.isArray(rows) || rows.length === 0) {
+          const nofound = "Không tìm thấy kết quả.";
+          replaceMessageText(assistantMsgId, { text: nofound, loading: false, error: null, data: { rows: [], rawRows: [] }, time: nowTime() });
+          speakText(nofound);
         } else {
-          const rows = Array.isArray(data.rows) ? data.rows : [];
-          const spec = data.spec ?? null;
           const preview = formatRowsPreview(rows);
-          const summaryText = rows.length === 0 ? "Không tìm thấy kết quả." : `Tìm thấy ${rows.length} kết quả. Hiển thị ${Math.min(rows.length, 5)} mục.`;
-          replaceMessageText(assistantMsgId, { text: summaryText, loading: false, error: null, data: { rows: preview, rawRows: rows, spec }, time: nowTime() });
-          // speak summary
+          const summaryText = `Tìm thấy ${rows.length} kết quả. Hiển thị ${Math.min(rows.length, 5)} mục.`;
+          replaceMessageText(assistantMsgId, { text: summaryText, loading: false, error: null, data: { rows: preview, rawRows: rows }, time: nowTime() });
           speakText(summaryText);
         }
       } else {
-        // normal chat response - parse robustly
+        const res = await chatAiService.chatAi(inputText);
+        // res may be { raw, text } or string or other shapes
         let parsedText = "";
-        if (data && typeof data === "object" && typeof data.text === "string") {
-          const inner = data.text.trim();
-          if (inner.startsWith("{") || inner.startsWith("[")) {
-            try {
-              const innerObj = JSON.parse(inner);
-              parsedText = parseModelResponse(innerObj);
-            } catch {
-              parsedText = parseModelResponse(inner);
-            }
-          } else {
-            parsedText = parseModelResponse(data.text);
-          }
-        } else {
-          parsedText = parseModelResponse(data);
-        }
+        if (!res) parsedText = "(Không có phản hồi từ server)";
+        else if (typeof res === "string") parsedText = parseModelResponse(res);
+        else if (typeof res === "object") {
+          // prefer text field
+          if (typeof res.text === "string" && res.text.trim()) parsedText = parseModelResponse(res.text);
+          else if (res.raw) parsedText = parseModelResponse(res.raw);
+          else parsedText = parseModelResponse(res);
+        } else parsedText = String(res);
+
         replaceMessageText(assistantMsgId, { text: parsedText, loading: false, error: null, time: nowTime() });
-        // speak the parsed text
         speakText(parsedText);
       }
-
-      setIsTyping(false);
     } catch (err: any) {
       console.error("sendMessageToBackend error:", err);
       const msg = err?.message ?? "Lỗi khi gọi server";
       replaceMessageText(assistantMsgId, { text: msg, loading: false, error: err?.message ?? "error", time: nowTime() });
-      // speak error if desired
       speakText(msg);
-      setIsTyping(false);
     } finally {
+      setIsTyping(false);
       setLoadingSend(false);
     }
   }
@@ -324,6 +279,7 @@ export default function AIChatbot() {
     setLoadingSend(true);
     setIsTyping(true);
 
+    // call backend service
     sendMessageToBackend(text, assistantMsg.id);
   }
 
@@ -340,13 +296,16 @@ export default function AIChatbot() {
   }
 
   function clearConversation() {
-    setMessages([]);
-    localStorage.removeItem(STORAGE_KEY);
+    setMessages([initialGreeting]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
     setConversationTitle("Tư vấn với AI");
   }
 
   function retryMessage(msg: Message) {
     if (msg.role !== "ai" || !msg.error) return;
+    // find previous user message
     const idx = messages.findIndex((m) => m.id === msg.id);
     let prevUser: Message | undefined;
     for (let i = idx - 1; i >= 0; i--) {
@@ -356,9 +315,9 @@ export default function AIChatbot() {
       }
     }
     if (!prevUser) return;
-    replaceMessageText(msg.id, { loading: true, error: null, text: "Đang thử lại..." });
+    replaceMessageText(msg.id, { loading: true, error: null, text: isDbQuery ? "Đang truy vấn lại..." : "Đang thử lại..." });
     setIsTyping(true);
-    // If this AI message had data (db), keep isDbQuery true for retry attempt.
+    // call backend with the same query. keep isDbQuery as current toggle state
     sendMessageToBackend(prevUser.text, msg.id);
   }
 
@@ -522,21 +481,6 @@ export default function AIChatbot() {
                             <input type="checkbox" checked={ttsEnabled} onChange={(e) => setTtsEnabled(e.target.checked)} />
                             <span className="text-xs text-slate-600 dark:text-slate-300">TTS</span>
                           </label>
-
-                          {/* voice select (small) */}
-                          {/* <select
-                            value={selectedVoiceURI ?? ""}
-                            onChange={(e) => setSelectedVoiceURI(e.target.value || null)}
-                            className="text-xs p-1 rounded border bg-white dark:bg-slate-800"
-                            title="Chọn giọng (nếu có)"
-                          >
-                            {availableVoices.length === 0 && <option value="">(No voices)</option>}
-                            {availableVoices.map((v) => (
-                              <option key={v.voiceURI} value={v.voiceURI}>
-                                {v.name} {v.lang ? `(${v.lang})` : ""}
-                              </option>
-                            ))}
-                          </select> */}
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -564,3 +508,5 @@ export default function AIChatbot() {
     </div>
   );
 }
+
+
