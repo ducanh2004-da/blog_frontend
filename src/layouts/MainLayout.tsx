@@ -13,7 +13,8 @@ export default function MainLayout() {
 
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
-  const [isDropDown, setDropDown] = useState(false);
+  const [dropDownValue, setDropDownValue] = useState<string>("profile");
+
   const debounceRef = useRef<number | null>(null);
 
   const handleInputChange = (e: any) => {
@@ -97,9 +98,12 @@ export default function MainLayout() {
               <>
                 <div className="flex items-center gap-2">
                   <MainDropdown
-                    value="profile"
+                    value={dropDownValue}
                     options={menuOptions}
-                    onChange={handleMenuSelect}
+                    onChange={(v) => {
+                      setDropDownValue(v);
+                      handleMenuSelect(v);
+                    }}
                     minWidth="180px"
                     className="ml-auto"
                     align="right"
