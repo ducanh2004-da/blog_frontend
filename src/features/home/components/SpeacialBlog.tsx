@@ -1,238 +1,274 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { blogService } from '../service/blog.service';
-import { useQuery } from '@tanstack/react-query';
-import { Blog } from '../types/blog.type';
 import { useNavigate } from 'react-router-dom';
+import { useTopLikedBlogs, useRecentBlogs, useEstimateReadTime } from '@/hooks/useBlogFeed';
+import { Blog } from '../types/blog.type';
+import { Card } from '@/components/common/Card';
 
-type MiniPost = {
+type TabType = 'highlight' | 'recent';
+
+interface MiniPost {
   id: string;
   title: string;
   date?: string;
   readTime?: string;
-  authorInitials?: string;
-  color?: string; // Tailwind gradient base (e.g. "from-yellow-400 to-orange-400")
-};
+  authorInitials: string;
+  color: string;
+}
 
-type Props = {
-  posts?: {
-    highlights?: MiniPost[];
-    recent?: MiniPost[];
-  };
-  initialTab?: 'highlight' | 'recent';
-  loading?: boolean;
-  onOpen?: (id: string) => void;
-  className?: string;
-};
+// Gradient colors for avatar backgrounds
+const GRADIENT_COLORS = [
+  'from-yellow-400 to-orange-400',
+  'from-green-400 to-teal-400',
+  'from-indigo-500 to-purple-500',
+  'from-pink-400 to-red-400',
+  'from-sky-400 to-indigo-400',
+];
 
-export default function SpecialBlog({
-  posts,
-  initialTab = 'highlight',
-  loading = false,
-  onOpen,
-  className = '',
-}: Props) {
-  const [tab, setTab] = useState<'highlight' | 'recent'>(initialTab);
+/**
+ * TabButton - Individual tab in tab list
+ */
+const TabButton = memo(function TabButton({
+  isActive,
+  label,
+  onClick,
+}: {
+  isActive: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      role="tab"
+      aria-selected={isActive}
+      onClick={onClick}
+      className={`relative flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+        isActive
+          ? 'bg-indigo-600 text-white shadow-md focus:ring-indigo-500'
+          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-indigo-500'
+      }`}
+    >
+      {label}
+      {isActive && (
+        <motion.span
+          layoutId="tab-underline"
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-400 rounded-full"
+          initial={false}
+        />
+      )}
+    </button>
+  );
+});
 
-  const gradients = [
-    'from-yellow-400 to-orange-400',
-    'from-green-400 to-teal-400',
-    'from-indigo-500 to-purple-500',
-    'from-pink-400 to-red-400',
-    'from-sky-400 to-indigo-400',
-  ];
-
+/**
+ * PostItem - Individual featured post item
+ */
+const PostItem = memo(function PostItem({
+  post,
+  index,
+}: {
+  post: MiniPost;
+  index: number;
+}) {
   const navigate = useNavigate();
 
-  // queries same as before...
-  const {
-    data: postLike,
-    isLoading: isLoadingLike,
-    isFetching: isFetchingLike,
-  } = useQuery<Blog[]>({
-    queryKey: ['postLike'],
-    queryFn: () => blogService.getTop5Like(),
-    staleTime: 1000 * 60 * 5,
-    enabled: !posts,
-  });
+  return (
+    <motion.li
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.2, delay: index * 0.05 }}
+    >
+      <button
+        onClick={() => navigate(`/viewDetail/${post.id}`)}
+        className="w-full rounded-lg border border-gray-200 bg-white p-3 text-left transition-all hover:border-indigo-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        aria-label={`Read ${post.title}`}
+      >
+        <div className="flex items-start gap-3">
+          {/* Avatar with gradient */}
+          <div
+            className={`h-10 w-10 flex-shrink-0 rounded-lg bg-gradient-to-br ${post.color} flex items-center justify-center text-sm font-bold text-white shadow`}
+            aria-hidden="true"
+          >
+            {post.authorInitials}
+          </div>
 
-  const {
-    data: postRecent,
-    isLoading: isLoadingRecent,
-  } = useQuery<Blog[]>({
-    queryKey: ['postRecent'],
-    queryFn: () => blogService.getTop5Recent(),
-    staleTime: 1000 * 60 * 5,
-    enabled: !posts,
-  });
+          {/* Post info */}
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-gray-900 line-clamp-2">
+              {post.title}
+            </h4>
+            <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+              {post.date && <time>{post.date}</time>}
+              {post.date && post.readTime && <span>•</span>}
+              {post.readTime && <span>{post.readTime}</span>}
+            </div>
+          </div>
+        </div>
+      </button>
+    </motion.li>
+  );
+});
 
-  const queriesLoading = (posts == null) && (isLoadingLike || isLoadingRecent);
+/**
+ * TabContent - Content area for tab
+ */
+const TabContent = memo(function TabContent({
+  posts,
+  isLoading,
+}: {
+  posts: MiniPost[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3" role="status" aria-label="Loading posts">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3 animate-pulse">
+            <div className="h-10 w-10 rounded-lg bg-gray-200" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-3/4 rounded bg-gray-200" />
+              <div className="h-2 w-1/2 rounded bg-gray-200" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-  // helpers...
-  const estimateReadTime = (content?: string | null) => {
-    if (!content) return undefined;
-    const words = content.trim().split(/\s+/).filter(Boolean).length;
-    const minutes = Math.max(1, Math.ceil(words / 200));
-    return `${minutes} min read`;
-  };
-
-  const getInitials = (b: Blog) => {
-    const name = b.user?.username || b.title || 'U';
-    const parts = name.split(/\s+/).filter(Boolean);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  };
-
-  const formatDate = (d?: string | Date | null) => {
-    if (!d) return undefined;
-    try {
-      const dt = typeof d === 'string' ? new Date(d) : d;
-      return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return String(d);
-    }
-  };
-
-  const mapToMiniPosts = (blogs?: Blog[]) => {
-    if (!blogs) return [];
-    return blogs.map((b, idx) => ({
-      id: b.id,
-      title: b.title ?? 'Untitled',
-      date: formatDate(b.createdAt),
-      readTime: estimateReadTime(b.content),
-      authorInitials: getInitials(b),
-      color: gradients[idx % gradients.length],
-    } as MiniPost));
-  };
-
-  const highlights = useMemo<MiniPost[]>(() => {
-    if (posts?.highlights) return posts.highlights;
-    return mapToMiniPosts(postLike ?? []);
-  }, [posts?.highlights, postLike]);
-
-  const recent = useMemo<MiniPost[]>(() => {
-    if (posts?.recent) return posts.recent;
-    return mapToMiniPosts(postRecent ?? []);
-  }, [posts?.recent, postRecent]);
-
-  const list = tab === 'highlight' ? highlights : recent;
+  if (posts.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-sm text-gray-500">Chưa có bài viết nào trong mục này.</p>
+      </div>
+    );
+  }
 
   return (
-    // keep it in grid, add a max width so it doesn't overexpand
-    <aside className={`lg:col-span-3 order-3 ${className}`}>
-      {/* sticky wrapper with z index so dropdowns are above main content */}
-      <div className="sticky top-6 space-y-6 z-20 max-w-[320px]">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <ul className="space-y-3" role="list">
+      <AnimatePresence mode="wait">
+        {posts.map((post, i) => (
+          <PostItem key={post.id} post={post} index={i} />
+        ))}
+      </AnimatePresence>
+    </ul>
+  );
+});
+
+/**
+ * Utility functions
+ */
+const getAuthorInitials = (blog: Blog): string => {
+  const name = blog.user?.username || blog.title || 'U';
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
+const formatDate = (dateStr?: string | null): string | undefined => {
+  if (!dateStr) return undefined;
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return undefined;
+  }
+};
+
+const mapToMiniPosts = (blogs: Blog[] | undefined, colors: string[]): MiniPost[] => {
+  if (!blogs) return [];
+  return blogs.map((blog, idx) => ({
+    id: blog.id,
+    title: blog.title ?? 'Untitled',
+    date: formatDate(blog.createdAt),
+    readTime: `${Math.max(1, Math.ceil((blog.content?.split(/\s+/).length || 0) / 200))} min read`,
+    authorInitials: getAuthorInitials(blog),
+    color: colors[idx % colors.length],
+  }));
+};
+
+/**
+ * SpecialBlog Component
+ * Right sidebar showing featured and recent posts with tab switching
+ * 
+ * Features:
+ * - Tab switching between favorites and recent posts
+ * - Gradient badges for visual appeal
+ * - Responsive design (hidden on mobile)
+ * - Accessibility support (ARIA labels, semantic HTML)
+ * - Memoized sub-components for performance
+ */
+export default function SpecialBlog() {
+  const [activeTab, setActiveTab] = useState<TabType>('highlight');
+
+  // Fetch top liked (featured) posts
+  const { data: featuredPosts, isLoading: isLoadingFeatured } = useTopLikedBlogs();
+
+  // Fetch recent posts
+  const { data: recentPosts, isLoading: isLoadingRecent } = useRecentBlogs();
+
+  // Convert blogs to mini posts
+  const highlightMiniPosts = useMemo(
+    () => mapToMiniPosts(featuredPosts, GRADIENT_COLORS),
+    [featuredPosts]
+  );
+
+  const recentMiniPosts = useMemo(
+    () => mapToMiniPosts(recentPosts, GRADIENT_COLORS),
+    [recentPosts]
+  );
+
+  const currentPosts = activeTab === 'highlight' ? highlightMiniPosts : recentMiniPosts;
+  const isLoading = activeTab === 'highlight' ? isLoadingFeatured : isLoadingRecent;
+
+  return (
+    <aside className="space-y-5" role="complementary" aria-label="Featured and recent posts">
+      <div className="sticky top-24 space-y-5 z-20">
+        {/* Featured Posts Card */}
+        <Card variant="default" padding="md">
           {/* Tab controls */}
           <div
             role="tablist"
-            aria-label="Special blog tabs"
-            className="flex items-center gap-3 rounded-lg p-1 bg-gradient-to-r from-blue-50 to-white"
-            style={{ zIndex: 30 }} // ensure clickable / above other parts when animated
+            aria-label="Post section tabs"
+            className="mb-4 flex gap-2"
           >
-            {(['highlight', 'recent'] as const).map((t) => {
-              const isActive = tab === t;
-              return (
-                <button
-                  key={t}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setTab(t)}
-                  className={`relative flex-1 rounded-md px-3 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300 ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="capitalize">
-                    {t === 'highlight' ? 'Yêu thích' : 'Gần đây'}
-                  </span>
-
-                  {isActive && (
-                    <motion.span
-                      layoutId="tab-active"
-                      className="absolute inset-x-0 -bottom-1 h-1 bg-indigo-600 rounded-t-md"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
+            <TabButton
+              isActive={activeTab === 'highlight'}
+              label="Yêu thích"
+              onClick={() => setActiveTab('highlight')}
+            />
+            <TabButton
+              isActive={activeTab === 'recent'}
+              label="Gần đây"
+              onClick={() => setActiveTab('recent')}
+            />
           </div>
 
-          {/* Content */}
-          <div className="mt-3">
-            {loading || queriesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((s) => (
-                  <div key={s} className="flex items-center gap-3 animate-pulse">
-                    <div className="h-10 w-10 rounded-lg bg-gray-200" />
-                    <div className="flex-1">
-                      <div className="h-3 w-3/4 rounded bg-gray-200 mb-2" />
-                      <div className="h-2 w-1/3 rounded bg-gray-200" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : list.length === 0 ? (
-              <div className="py-6 text-center text-sm text-gray-500">
-                Không có bài viết nào trong mục này.
-              </div>
-            ) : (
-              <ul className="mt-3 space-y-3">
-                <AnimatePresence initial={false}>
-                  {list.map((p, idx) => {
-                    const gradient = p.color ?? gradients[idx % gradients.length];
-                    return (
-                      <motion.li
-                        key={p.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 6 }}
-                        transition={{ duration: 0.25, delay: idx * 0.03 }}
-                        onClick={() => navigate(`/viewDetail/${p?.id}`)}
-                      >
-                        <button
-                          onClick={() => onOpen?.(p.id)}
-                          className="w-full text-left rounded-lg p-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-200 flex items-start gap-3 cursor-pointer"
-                        >
-                          <div
-                            className={`h-10 w-10 flex-shrink-0 rounded-lg text-white flex items-center justify-center font-semibold bg-gradient-to-br ${gradient}`}
-                            aria-hidden
-                          >
-                            {p.authorInitials ?? p.title.split(' ').map((s) => s[0]).slice(0, 2).join('')}
-                          </div>
+          {/* Tab Content */}
+          <TabContent posts={currentPosts} isLoading={isLoading} />
+        </Card>
 
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-gray-900">{p.title}</div>
-                            <div className="text-xs text-gray-400 mt-0.5">
-                              {p.date ? `${p.date}${p.readTime ? ` • ${p.readTime}` : ''}` : p.readTime}
-                            </div>
-                          </div>
-                        </button>
-                      </motion.li>
-                    );
-                  })}
-                </AnimatePresence>
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-800">Lọc</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {['All', 'Blog hay', 'ĐA dep trai', 'Mr.Gold'].map((f) => (
+        {/* Filters Card */}
+        <Card variant="default" padding="md">
+          <h3 className="mb-3 text-sm font-semibold text-gray-800">Danh mục</h3>
+          <div className="flex flex-wrap gap-2">
+            {['Tất cả', 'Phổ biến', 'Mới', 'Được lưu'].map((category) => (
               <button
-                key={f}
-                className="rounded-md border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                key={category}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-all hover:border-indigo-200 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label={`Filter by ${category}`}
               >
-                {f}
+                {category}
               </button>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </aside>
   );

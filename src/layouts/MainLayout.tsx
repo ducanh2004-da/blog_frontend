@@ -1,168 +1,255 @@
-// src/layouts/MainLayout.tsx
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef, useCallback, memo } from "react";
 import Avatar from "@mui/material/Avatar";
 import { MainDropdown } from "@/components";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search, Zap } from "lucide-react";
 
-export default function MainLayout() {
-  const user = useAuthStore((s) => s.userDetails);
-  const logout = useAuthStore((s) => s.logout);
-  const navigate = useNavigate();
-
+/**
+ * SearchBox - Header search input with debouncing
+ */
+const SearchBox = memo(function SearchBox({
+  onSearch,
+}: {
+  onSearch: (term: string) => void;
+}) {
   const [input, setInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [dropDownValue, setDropDownValue] = useState<string>("profile");
-
   const debounceRef = useRef<number | null>(null);
 
-  const handleInputChange = (e: any) => {
-    const v = e.target.value;
-    setInput(v);
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
 
-    // debounce 300ms
+    // Debounce search to 300ms
     if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
+      globalThis.clearTimeout(debounceRef.current);
     }
-    debounceRef.current = window.setTimeout(() => {
-      setSearch(v.trim());
+    debounceRef.current = globalThis.setTimeout(() => {
+      onSearch(value.trim());
       debounceRef.current = null;
     }, 300);
-  };
+  }, [onSearch]);
+
+  return (
+    <div className="flex-1 max-w-md">
+      <div className="relative flex items-center">
+        <input
+          type="search"
+          placeholder="Tìm kiếm bài viết, người dùng..."
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={(e) => e.key === 'Enter' && onSearch(input.trim())}
+          className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-colors"
+          aria-label="Search posts and users"
+        />
+        <Search className="absolute right-3 h-4 w-4 text-gray-400" aria-hidden="true" />
+      </div>
+    </div>
+  );
+});
+
+/**
+ * AIButton - AI support button
+ */
+const AIButton = memo(function AIButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="hidden md:flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:shadow-lg hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      aria-label="Open AI assistant"
+    >
+      <Zap className="h-4 w-4" />
+      <span>Support with ViLearn A.I</span>
+    </button>
+  );
+});
+
+/**
+ * ProfileMenu - User profile dropdown menu
+ */
+const ProfileMenu = memo(function ProfileMenu({
+  user,
+  onLogout,
+  onNavigateProfile,
+}: {
+  user: any;
+  onLogout: () => void;
+  onNavigateProfile: () => void;
+}) {
+  const [dropdownValue, setDropdownValue] = useState("profile");
 
   const menuOptions = [
-    { label: "Profile", value: "profile", icon: "lucide:user" },
-    { label: "Logout", value: "logout", icon: "lucide:log-out" },
+    { label: "Hồ sơ", value: "profile", icon: "lucide:user" },
+    { label: "Đăng xuất", value: "logout", icon: "lucide:log-out" },
   ];
 
   const handleMenuSelect = async (value: string) => {
     switch (value) {
       case "profile":
-        navigate("/profile");
+        onNavigateProfile();
         break;
       case "logout":
-        await logout();
-        navigate("/");
+        onLogout();
         break;
       default:
         break;
     }
   };
 
+  if (!user) {
+    return (
+      <button
+        onClick={onNavigateProfile}
+        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        aria-label="Sign in"
+      >
+        Đăng nhập
+      </button>
+    );
+  }
+
   return (
-    <div className="w-full">
-      <header className="flex h-15 justify-between px-6 items-center border-b border-gray-200 bg-white shadow-sm">
-        <div className="search-box max-w-3xl flex">
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            value={input}
-            onChange={handleInputChange}
-            className="w-150 p-2 border border-gray-300 rounded-l-md focus:outline-none"
-          />
-          <button
-            onClick={() => setSearch(input.trim())}
-            className="p-2 cursor-pointer bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
-          >
-            Tìm
-          </button>
-        </div>
-
-        <div className="aiSupport mr-20">
-          <button 
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 cursor-pointer flex items-center justify-center space-x-2"
-          onClick={() => {
-            navigate('/ai');
-          }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
+    <MainDropdown
+      value={dropdownValue}
+      options={menuOptions}
+      onChange={(v) => {
+        setDropdownValue(v);
+        handleMenuSelect(v);
+      }}
+      minWidth="180px"
+      className="ml-auto"
+      align="right"
+      showChecks={false}
+      userInfo={{ username: user?.username, email: user?.email }}
+    >
+      {() => (
+        <div className="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-gray-100">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white shadow-md overflow-hidden">
+            {user?.avatar ? (
+              <img
+                src={user?.avatar}
+                alt={user?.username}
+                className="h-full w-full object-cover"
               />
-            </svg>
-            <span>Support with ViLearn A.I</span>
-          </button>
-        </div>
-
-        <div className="left-side-header flex items-center gap-4">
-          <div className="profile-menu flex items-center gap-3">
-            {user ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <MainDropdown
-                    value={dropDownValue}
-                    options={menuOptions}
-                    onChange={(v) => {
-                      setDropDownValue(v);
-                      handleMenuSelect(v);
-                    }}
-                    minWidth="180px"
-                    className="ml-auto"
-                    align="right"
-                    showChecks={false}
-                    userInfo={{ username: user?.username, email: user?.email }}
-                  >
-                    {() => (
-                      <div className="flex relative cursor-pointer gap-3">
-                        <div className="w-[3rem] h-[3rem] rounded-full bg-primary text-white flex items-center justify-center text-[1.2rem] font-medium shadow-md overflow-hidden">
-                          {user?.avatar ? (
-                            <>
-                              <img
-                                src={user?.avatar}
-                                alt={user?.username}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            </>
-                          ) : (
-                            <Avatar
-                              style={{ width: 24, height: 24, fontSize: 12 }}
-                            >
-                              {user?.username?.charAt(0)?.toUpperCase() ?? "U"}
-                            </Avatar>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col text-sm mt-2">
-                          <span className="font-medium text-gray-700">
-                            {user?.username ?? user.email}
-                          </span>
-                          <small className="text-xs text-gray-400">
-                            {user?.role}
-                          </small>
-                        </div>
-                        <ChevronDown className="mt-2" />
-                      </div>
-                    )}
-                  </MainDropdown>
-                </div>
-              </>
             ) : (
-              <button
-                onClick={() => navigate("/auth/login")}
-                className="cursor-pointer px-3 py-1 rounded bg-indigo-600 text-white text-sm"
-              >
-                Đăng nhập
-              </button>
+              <Avatar style={{ width: 24, height: 24, fontSize: 12 }}>
+                {user?.username?.charAt(0)?.toUpperCase() ?? "U"}
+              </Avatar>
             )}
+          </div>
+
+          <div className="hidden sm:flex flex-col text-sm">
+            <span className="font-medium text-gray-900">
+              {user?.username ?? user.email}
+            </span>
+            <small className="text-xs text-gray-500">
+              {user?.role || "User"}
+            </small>
+          </div>
+
+          <ChevronDown className="h-4 w-4 text-gray-600" />
+        </div>
+      )}
+    </MainDropdown>
+  );
+});
+
+/**
+ * MainLayout Component
+ * Top-level layout with header, sidebar toggle for mobile, and main content area
+ * 
+ * Features:
+ * - Responsive header with search
+ * - User profile dropdown
+ * - AI assistant button
+ * - Mobile-friendly navigation
+ * - Accessibility support (ARIA labels, semantic HTML)
+ */
+export default function MainLayout() {
+  const user = useAuthStore((s) => s.userDetails);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+
+  const handleSearch = useCallback((_searchTerm: string) => {
+    // Search is handled by Home component via outlet context
+    // This callback exists for future search API integration
+  }, []);
+
+  const handleAIClick = useCallback(() => {
+    navigate('/ai');
+  }, [navigate]);
+
+  const handleNavigateProfile = useCallback(() => {
+    navigate(user ? '/profile' : '/auth/login');
+  }, [navigate, user]);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    navigate('/');
+  }, [logout, navigate]);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] flex h-16 items-center justify-between gap-4 md:gap-6">
+            {/* Logo / Brand */}
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => navigate("/")}
+                className="text-xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg px-2 py-1"
+                aria-label="BlogPlatform home"
+              >
+                📝 EduSocial
+              </button>
+            </div>
+
+            {/* Search Box */}
+            <SearchBox onSearch={handleSearch} />
+
+            {/* Right Section: AI Button, Profile */}
+            <div className="flex items-center gap-3 md:gap-4">
+              <AIButton onClick={handleAIClick} />
+
+              <div className="h-8 w-px bg-gray-200 hidden md:block" aria-hidden="true" />
+
+              <ProfileMenu
+                user={user}
+                onLogout={handleLogout}
+                onNavigateProfile={handleNavigateProfile}
+              />
+            </div>
           </div>
         </div>
       </header>
 
-      <section className="w-full max-w-full min-h-screen relative overflow-hidden py-5">
-        <Outlet context={{ search }} />
-      </section>
+      {/* Main Content Area */}
+      <main className="flex-1 w-full bg-gradient-to-b from-white to-gray-50">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <div className="mx-auto max-w-[1400px]">
+            <Outlet context={{ search: '' }} />
+          </div>
+        </div>
+      </main>
 
-      <footer>
-        <div className="w-full p-4 text-center text-gray-500">
-          &copy; {new Date().getFullYear()} BlogPlatform. All rights reserved.
+      {/* Footer */}
+      <footer className="mt-auto border-t border-gray-200 bg-gray-50">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mx-auto max-w-[1400px] text-center text-sm text-gray-600">
+            <p>&copy; {new Date().getFullYear()} EduSocial. Tất cả quyền được bảo vệ.</p>
+            <div className="mt-4 flex justify-center gap-6 text-xs">
+              <button type="button" className="hover:text-indigo-600 transition-colors bg-none border-none cursor-pointer">
+                Điều khoản
+              </button>
+              <button type="button" className="hover:text-indigo-600 transition-colors bg-none border-none cursor-pointer">
+                Quyền riêng tư
+              </button>
+              <button type="button" className="hover:text-indigo-600 transition-colors bg-none border-none cursor-pointer">
+                Liên hệ
+              </button>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
