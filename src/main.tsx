@@ -25,9 +25,9 @@ if (!isProduction && typeof window !== 'undefined') {
 }
 
 const Provider = reactArrayToTree([
-  <GoogleOAuthProvider clientId="668170883552-o14fk02rm71pc4q4nv30gqgtmrrai28m.apps.googleusercontent.com">{null}</GoogleOAuthProvider>,
-  <QueryClientProvider client={queryClient}>{null}</QueryClientProvider>,
-  <AuthProvider>{null}</AuthProvider>
+  <GoogleOAuthProvider key="google-oauth" clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID!}>{null}</GoogleOAuthProvider>,
+  <QueryClientProvider key="query-client" client={queryClient}>{null}</QueryClientProvider>,
+  <AuthProvider key="auth">{null}</AuthProvider>
 ])
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
