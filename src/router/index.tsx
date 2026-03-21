@@ -1,7 +1,7 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, redirect, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
-
+import { PageSkeleton } from '@/components/common/layouts/PageSkeleton';
 import { MainLayout, AuthLayout, ErrorBoundary } from '../layouts';
 
 // Lazy pages
@@ -40,6 +40,11 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>
 }
 
+//Hiển thị loading UI trong lúc tải component
+const withSuspense = (Element: any) => (
+  <Suspense fallback={<PageSkeleton />}>{Element}</Suspense>
+)
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -51,9 +56,9 @@ export const router = createBrowserRouter([
             <Pages.Main.Home />
         )
       },
-       { path: "viewDetail/:blogId", element: <Pages.Main.ViewDetail /> },
-       {path: "profile", element: <ProtectedRoute><Pages.Main.Profile /></ProtectedRoute>},
-       {path: "ai", element: <Pages.Main.AIChatbot />}
+       { path: "viewDetail/:blogId", element: withSuspense(<Pages.Main.ViewDetail />) },
+       {path: "profile", element: withSuspense(<ProtectedRoute><Pages.Main.Profile /></ProtectedRoute>)},
+       {path: "ai", element: withSuspense(<Pages.Main.AIChatbot />)}
     ],
     errorElement: <ErrorBoundary />,
   },
@@ -63,7 +68,7 @@ export const router = createBrowserRouter([
     children: [
       { 
         path: 'login', 
-        element: (
+        element: withSuspense(
           <AuthRoute>
             <Pages.Auth.Login />
           </AuthRoute>
@@ -71,7 +76,7 @@ export const router = createBrowserRouter([
       },
       { 
         path: 'signup', 
-        element: (
+        element: withSuspense(
           <AuthRoute>
             <Pages.Auth.Register />
           </AuthRoute>
