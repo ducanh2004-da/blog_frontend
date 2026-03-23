@@ -21,6 +21,11 @@ const Pages = {
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const userDetails = useAuthStore(state => state.userDetails)
+  const isAuthInitialized = useAuthStore(state => state.isAuthInitialized)
+  
+  if (!isAuthInitialized) {
+    return <PageSkeleton />
+  }
   
   if (!userDetails) {
     return <Navigate to="/auth/login" replace />
@@ -32,6 +37,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Auth Route Component (redirect nếu đã đăng nhập)
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated)
+  const isAuthInitialized = useAuthStore(state => state.isAuthInitialized) // <-- DÙNG STATE MỚI
+
+  // Đang check ngầm -> Khóa tạm form Login/Register
+  if (!isAuthInitialized) {
+    return <PageSkeleton />
+  }
   
   if (isAuthenticated) {
     return <Navigate to="/" replace />

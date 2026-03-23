@@ -95,6 +95,7 @@ export interface AuthStore {
   googleInfo: GoogleUserInfo | null
   isAuthenticated: boolean
   isLoading: boolean
+  isAuthInitialized: boolean,
 
   // Actions
   login: (email: string, password: string) => Promise<AuthResponse>

@@ -11,6 +11,7 @@ export const useAuthStore = create<AuthStore>()((set, get): AuthStore => ({
   googleInfo: null,
   isAuthenticated: false,
   isLoading: false,
+  isAuthInitialized: false,
 
   login: async (email: string, password: string) => {
     try {
@@ -160,13 +161,14 @@ export const useAuthStore = create<AuthStore>()((set, get): AuthStore => ({
             role: userInfo.role,
             username: userInfo.username
           } as DecodedToken,
+          isAuthInitialized: true,
           isLoading: false
         });
       } else {
-        set({ user: null, userDetails: null, isAuthenticated: false, isLoading: false });
+        set({ user: null, userDetails: null, isAuthenticated: false, isAuthInitialized: true, isLoading: false });
       }
     } catch (error) {
-      set({ user: null, userDetails: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, userDetails: null, isAuthenticated: false, isAuthInitialized: true, isLoading: false });
     }
   },
 
