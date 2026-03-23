@@ -8,10 +8,12 @@ import BlogLikes from "./BlogLike";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate } from "react-router-dom";
 import { useEstimateReadTime } from "@/hooks/useBlogFeed";
+import { STATIC_POSTS } from "@/mocks/post";
 
 /**
  * Utility to highlight search terms in text
  */
+
 const highlightText = (text: string, term: string) => {
   if (!term) return <>{text}</>;
   const escaped = term.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
@@ -237,11 +239,11 @@ const PostItem = memo(
  * LoadingState - Skeleton loading state
  */
 const LoadingState = () => (
-  <div className="space-y-6" role="progressbar" aria-valuenow={0} aria-valuemin={0} aria-valuemax={100} aria-label="Loading posts">
-    {[1, 2, 3].map((i) => (
+  <div className="space-y-6" role="progressbar" aria-valuenow={0} aria-valuemin={0} aria-valuemax={100}>
+    {[1, 2].map((i) => (
       <div
         key={i}
-        className="h-48 rounded-2xl bg-gray-200 animate-pulse"
+        className="h-48 rounded-2xl bg-gray-200 animate-pulse border border-gray-100"
       />
     ))}
   </div>
@@ -295,7 +297,20 @@ export default function Post({
     });
   }, [posts, searchTerm]);
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) {
+    return (
+      <div className="space-y-6" role="feed" aria-busy={true}>
+        {/* Render bài viết tĩnh có sẵn */}
+        <div className="space-y-6 mb-6">
+          {STATIC_POSTS.map((post, i) => (
+            <PostItem key={post.id} index={i} post={post} search="" />
+          ))}
+        </div>
+        {/* Render Skeleton nhấp nháy báo hiệu đang tải thêm */}
+        <LoadingState />
+      </div>
+    );
+  }
   if (isError)
     return (
       <div
@@ -307,7 +322,7 @@ export default function Post({
     );
 
   return (
-    <div className="space-y-6" role="feed" aria-label="Blog feed" aria-busy={isLoading}>
+    <div className="space-y-6" role="feed" aria-label="Blog feed">
       {filteredPosts.length === 0 ? (
         <EmptyState hasSearch={searchTerm.length > 0} />
       ) : (
